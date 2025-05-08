@@ -10,6 +10,7 @@ import FacultiesPage from "./pages/FacultiesPage";
 import FacultyDetailsPage from "./pages/FacultyDetailsPage";
 import DepartmentPage from "./pages/DepartmentPage";
 import CoursePage from "./pages/CoursePage";
+import CoursesPage from "./pages/CoursesPage";
 import LessonPage from "./pages/LessonPage";
 import ExamPage from "./pages/ExamPage";
 import CertificatePage from "./pages/CertificatePage";
@@ -25,6 +26,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/faculties" element={<FacultiesPage />} />
+          <Route path="/courses" element={<CoursesPage />} />
           <Route path="/faculty/:slug" element={<FacultyDetailsPage />} />
           <Route path="/department/:slug" element={<DepartmentPage />} />
           <Route path="/course/:slug" element={<CoursePage />} />
