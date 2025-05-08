@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Course } from '@/types';
-import { Book, Clock, GraduationCap, Certificate, User } from 'lucide-react';
+import { Book, Clock, GraduationCap, Award, User } from 'lucide-react';
 import { faculties } from '@/data/faculties';
 
 const CoursePage: React.FC = () => {
@@ -202,7 +202,7 @@ const CoursePage: React.FC = () => {
                 <TabsContent value="certificate">
                   <div className="text-center py-8">
                     <div className="mb-6 flex justify-center">
-                      <Certificate className="h-16 w-16 text-secondary" />
+                      <Award className="h-16 w-16 text-secondary" />
                     </div>
                     <h2 className="text-2xl font-serif font-medium mb-4">Course Certificate</h2>
                     <p className="text-gray-700 mb-6 max-w-2xl mx-auto">
@@ -263,7 +263,7 @@ const CoursePage: React.FC = () => {
                       </div>
                     </li>
                     <li className="flex items-start">
-                      <Certificate className="h-5 w-5 mr-3 text-gray-500 mt-0.5" />
+                      <Award className="h-5 w-5 mr-3 text-gray-500 mt-0.5" />
                       <div>
                         <p className="font-medium">Certificate</p>
                         <p className="text-sm text-gray-600">Included upon completion</p>

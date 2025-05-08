@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Book, GraduationCap, Users, Certificate } from 'lucide-react';
+import { Book, GraduationCap, Users, Award } from 'lucide-react';
 
 interface Stat {
   icon: React.ReactNode;
@@ -25,7 +25,7 @@ const stats: Stat[] = [
     label: 'Students Worldwide',
   },
   {
-    icon: <Certificate className="w-8 h-8 text-primary" />,
+    icon: <Award className="w-8 h-8 text-primary" />,
     value: '5,000+',
     label: 'Certificates Issued',
   },
