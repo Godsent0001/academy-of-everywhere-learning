@@ -2,8 +2,16 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Award } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 const CertificateTab: React.FC = () => {
+  const handlePreviewCertificate = () => {
+    toast({
+      title: "Certificate Preview",
+      description: "Your certificate will be available after completing all course requirements.",
+    });
+  };
+
   return (
     <div className="text-center py-8">
       <div className="mb-6 flex justify-center">
@@ -23,7 +31,7 @@ const CertificateTab: React.FC = () => {
           <li>Complete any required assignments or projects</li>
         </ul>
       </div>
-      <Button>Preview Certificate</Button>
+      <Button onClick={handlePreviewCertificate}>Preview Certificate</Button>
     </div>
   );
 };
