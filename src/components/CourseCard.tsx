@@ -37,6 +37,11 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
             src={courseImage} 
             alt={course.name} 
             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" 
+            onError={(e) => {
+              // Fallback to placeholder image if the image fails to load
+              const target = e.target as HTMLImageElement;
+              target.src = getCourseImage(course.name);
+            }}
           />
         </div>
         <CardHeader>
