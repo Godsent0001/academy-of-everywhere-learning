@@ -4,16 +4,23 @@ import { Button } from '@/components/ui/button';
 import { Upload, File } from 'lucide-react';
 
 interface FileUploaderProps {
-  onFilesSelected: (files: FileList) => void;
+  onFilesSelected: (files: File[]) => void;
+  maxSize?: number;
+  accept?: Record<string, string[]>;
 }
 
-export const FileUploader: React.FC<FileUploaderProps> = ({ onFilesSelected }) => {
+export const FileUploader: React.FC<FileUploaderProps> = ({ 
+  onFilesSelected, 
+  maxSize,
+  accept 
+}) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      onFilesSelected(e.target.files);
+      const filesArray = Array.from(e.target.files);
+      onFilesSelected(filesArray);
       
       // Reset file input
       if (fileInputRef.current) {
@@ -45,7 +52,8 @@ export const FileUploader: React.FC<FileUploaderProps> = ({ onFilesSelected }) =
     setIsDragging(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      onFilesSelected(e.dataTransfer.files);
+      const filesArray = Array.from(e.dataTransfer.files);
+      onFilesSelected(filesArray);
     }
   };
   
@@ -54,6 +62,13 @@ export const FileUploader: React.FC<FileUploaderProps> = ({ onFilesSelected }) =
       fileInputRef.current.click();
     }
   };
+  
+  let acceptAttribute = undefined;
+  if (accept) {
+    acceptAttribute = Object.entries(accept)
+      .map(([type, extensions]) => extensions.join(','))
+      .join(',');
+  }
   
   return (
     <div
@@ -71,7 +86,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({ onFilesSelected }) =
         className="hidden"
         ref={fileInputRef}
         onChange={handleFileInputChange}
-        accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+        accept={acceptAttribute}
       />
       
       <div className="flex flex-col items-center justify-center space-y-4">

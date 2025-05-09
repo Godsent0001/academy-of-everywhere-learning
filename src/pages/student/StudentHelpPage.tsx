@@ -1,11 +1,9 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FileUploader } from '@/components/FileUploader';
@@ -134,7 +132,7 @@ const StudentHelpPage: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <FileUploader 
-                    onFilesAccepted={handleFileUpload}
+                    onFilesSelected={handleFileUpload}
                     maxSize={10485760} // 10 MB
                     accept={{
                       'application/pdf': ['.pdf'],
