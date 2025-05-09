@@ -1,46 +1,128 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Search, User } from 'lucide-react';
+import { Search, User, Menu, X, BookOpen, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Navbar: React.FC = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/courses?search=${encodeURIComponent(searchQuery)}`);
+      setSearchQuery('');
+    }
+  };
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
-    <nav className="bg-white border-b border-gray-200">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center">
-          <Link to="/" className="flex items-center">
-            <span className="text-xl font-serif font-bold text-primary">Academy of Everywhere</span>
-          </Link>
-        </div>
-
-        <div className="hidden md:flex items-center space-x-8 mx-4 flex-grow justify-center">
-          <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Home</Link>
-          <Link to="/faculties" className="text-gray-700 hover:text-primary transition-colors">Faculties</Link>
-          <Link to="/courses" className="text-gray-700 hover:text-primary transition-colors">All Courses</Link>
-          <Link to="/about" className="text-gray-700 hover:text-primary transition-colors">About</Link>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <div className="hidden md:block relative">
-            <Input
-              type="text"
-              placeholder="Search courses..."
-              className="w-[200px] pl-8"
-            />
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center">
+              <BookOpen className="h-6 w-6 text-primary mr-2" />
+              <span className="text-xl font-serif font-bold text-primary hidden sm:inline">Academy of Everywhere</span>
+              <span className="text-xl font-serif font-bold text-primary sm:hidden">AoE</span>
+            </Link>
           </div>
-          
-          <Button variant="ghost" size="icon">
-            <Search className="h-5 w-5 md:hidden" />
-          </Button>
-          <Button variant="outline" className="hidden sm:flex">
-            <User className="h-4 w-4 mr-2" />
-            Sign In
-          </Button>
-          <Button className="hidden sm:flex">Enroll Now</Button>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8 mx-4 flex-grow justify-center">
+            <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Home</Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="text-gray-700 hover:text-primary transition-colors flex items-center">
+                Academics <ChevronDown className="h-4 w-4 ml-1" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <Link to="/faculties" className="w-full">Faculties</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/courses" className="w-full">All Courses</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Link to="/student/materials" className="text-gray-700 hover:text-primary transition-colors">Student Materials</Link>
+            <Link to="/about" className="text-gray-700 hover:text-primary transition-colors">About</Link>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <form onSubmit={handleSearch} className="hidden md:flex relative">
+              <Input
+                type="text"
+                placeholder="Search courses..."
+                className="w-[200px] pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+            </form>
+            
+            <div className="hidden sm:flex space-x-2">
+              <Link to="/signin">
+                <Button variant="ghost" size="sm" className="flex items-center">
+                  <User className="h-4 w-4 mr-2" />
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button size="sm">Sign Up</Button>
+              </Link>
+            </div>
+
+            {/* Mobile menu button */}
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleMenu}>
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
         </div>
+
+        {/* Mobile menu */}
+        {isMenuOpen && (
+          <div className="md:hidden mt-4 pb-4">
+            <form onSubmit={handleSearch} className="mb-4 relative">
+              <Input
+                type="text"
+                placeholder="Search courses..."
+                className="w-full pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+            </form>
+            <div className="flex flex-col space-y-3">
+              <Link to="/" className="text-gray-700 hover:text-primary py-2 transition-colors" onClick={toggleMenu}>Home</Link>
+              <Link to="/faculties" className="text-gray-700 hover:text-primary py-2 transition-colors" onClick={toggleMenu}>Faculties</Link>
+              <Link to="/courses" className="text-gray-700 hover:text-primary py-2 transition-colors" onClick={toggleMenu}>All Courses</Link>
+              <Link to="/student/materials" className="text-gray-700 hover:text-primary py-2 transition-colors" onClick={toggleMenu}>Student Materials</Link>
+              <Link to="/about" className="text-gray-700 hover:text-primary py-2 transition-colors" onClick={toggleMenu}>About</Link>
+              <div className="pt-2 flex space-x-2">
+                <Link to="/signin" className="w-1/2">
+                  <Button variant="outline" className="w-full" onClick={toggleMenu}>Sign In</Button>
+                </Link>
+                <Link to="/signup" className="w-1/2">
+                  <Button className="w-full" onClick={toggleMenu}>Sign Up</Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );

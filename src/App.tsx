@@ -14,6 +14,10 @@ import CoursesPage from "./pages/CoursesPage";
 import LessonPage from "./pages/LessonPage";
 import ExamPage from "./pages/ExamPage";
 import CertificatePage from "./pages/CertificatePage";
+import AboutPage from "./pages/AboutPage";
+import SignInPage from "./pages/auth/SignInPage";
+import SignUpPage from "./pages/auth/SignUpPage";
+import StudentMaterialsPage from "./pages/student/StudentMaterialsPage";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +37,10 @@ const App = () => (
           <Route path="/lesson/:slug" element={<LessonPage />} />
           <Route path="/exam/:slug" element={<ExamPage />} />
           <Route path="/certificate/:slug" element={<CertificatePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/signin" element={<SignInPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/student/materials" element={<StudentMaterialsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

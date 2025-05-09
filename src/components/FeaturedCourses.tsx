@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { faculties } from '@/data/faculties';
 import CourseCard from './CourseCard';
+import { ChevronRight } from 'lucide-react';
 
 export const FeaturedCourses: React.FC = () => {
   // Get all courses from all departments
@@ -11,8 +12,24 @@ export const FeaturedCourses: React.FC = () => {
     .flatMap(faculty => faculty.departments)
     .flatMap(department => department.courses);
   
-  // Get a sample of courses to feature (limited to 4)
-  const featuredCourses = allCourses.slice(0, 4);
+  // Select trending tech and popular courses
+  // In a real app, this would be based on analytics data
+  const trendingCoursesKeywords = ['programming', 'data', 'ai', 'machine learning', 'web', 'cyber', 'blockchain'];
+  
+  const trendingCourses = allCourses
+    .filter(course => 
+      trendingCoursesKeywords.some(keyword => 
+        course.name.toLowerCase().includes(keyword.toLowerCase()) || 
+        course.description.toLowerCase().includes(keyword.toLowerCase())
+      )
+    )
+    .sort((a, b) => b.lessons.length - a.lessons.length)
+    .slice(0, 4);
+
+  // If we don't have enough trending courses, add other courses until we have 4
+  const featuredCourses = trendingCourses.length < 4 
+    ? [...trendingCourses, ...allCourses.filter(course => !trendingCourses.includes(course)).slice(0, 4 - trendingCourses.length)]
+    : trendingCourses;
 
   return (
     <section className="py-16">
@@ -23,7 +40,10 @@ export const FeaturedCourses: React.FC = () => {
             <p className="text-gray-600 max-w-2xl">Explore our most popular courses across various disciplines</p>
           </div>
           <Link to="/courses">
-            <Button variant="outline" className="mt-4 md:mt-0">View All Courses</Button>
+            <Button variant="outline" className="mt-4 md:mt-0 group">
+              View All Courses
+              <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Button>
           </Link>
         </div>
 
