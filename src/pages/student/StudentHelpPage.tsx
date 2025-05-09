@@ -3,108 +3,88 @@ import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FileUploader } from '@/components/FileUploader';
 import { FileItem } from '@/components/FileItem';
-import { BookText, FileImage, FileText, Upload, FileVideo, Robot } from 'lucide-react';
+import { BookText, FileImage, FileText, Upload, FileVideo, GraduationCap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const StudentHelpPage: React.FC = () => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<string>('upload');
-  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [aiResponse, setAiResponse] = useState<string>('');
-  const [question, setQuestion] = useState<string>('');
-  const [processingOption, setProcessingOption] = useState<'summarize' | 'expand' | 'questions'>('summarize');
+  const [files, setFiles] = useState<{
+    id: string;
+    name: string;
+    size: number;
+    type: string;
+    uploadDate: string;
+    status: 'uploaded' | 'processing' | 'processed';
+  }[]>([]);
+  const [question, setQuestion] = useState('');
 
-  const handleFileUpload = (files: FileList) => {
-    const newFiles = Array.from(files).map(file => ({
-      id: Math.random().toString(36).substring(7),
+  const handleFileUpload = (newFiles: File[]) => {
+    const newUploadedFiles = newFiles.map(file => ({
+      id: Math.random().toString(36).substring(2, 9),
       name: file.name,
       size: file.size,
       type: file.type,
       uploadDate: new Date().toISOString(),
-      status: 'uploaded'
+      status: 'uploaded' as const
     }));
     
-    setUploadedFiles([...uploadedFiles, ...newFiles]);
+    setFiles(prev => [...prev, ...newUploadedFiles]);
     
-    toast({
-      title: "Files uploaded",
-      description: `${files.length} file(s) have been added to your materials.`
-    });
-  };
-
-  const handleProcessFile = (fileId: string) => {
-    setIsProcessing(true);
-    
-    // Simulate AI processing
+    // Simulate processing
     setTimeout(() => {
-      setIsProcessing(false);
-      
-      // Update file status
-      setUploadedFiles(prev => 
-        prev.map(file => 
-          file.id === fileId ? { ...file, status: 'processed' } : file
+      setFiles(prev => 
+        prev.map(f => 
+          newUploadedFiles.some(nf => nf.id === f.id) 
+            ? { ...f, status: 'processing' as const } 
+            : f
         )
       );
       
-      // Generate simulated AI response based on the processing option
-      let responseText = '';
-      
-      switch (processingOption) {
-        case 'summarize':
-          responseText = "Here's a concise summary of your material:\n\nThis document covers key concepts in the subject area, focusing on fundamental principles and their applications. The main topics include theoretical frameworks, practical methodologies, and analytical approaches to problem-solving. Important definitions and formulas are highlighted throughout the text, with examples demonstrating real-world applications.";
-          break;
-        case 'expand':
-          responseText = "Here's an expanded explanation of your material:\n\nThe uploaded document explores several complex topics in depth. Beginning with foundational concepts, it builds a comprehensive framework for understanding the subject matter. Each section elaborates on specific aspects, providing detailed explanations, historical context, and contemporary relevance. The material presents multiple perspectives and approaches, critically examining underlying assumptions and methodological considerations.";
-          break;
-        case 'questions':
-          responseText = "Here are some practice questions based on your material:\n\n1. What are the three main principles discussed in section 2.3? Explain how they relate to each other.\n\n2. Compare and contrast the two methodological approaches outlined in the document.\n\n3. Multiple Choice: Which of the following best describes the concept of [topic]?\n   a) A systematic approach to problem-solving\n   b) A theoretical framework for analysis\n   c) A set of practical techniques\n   d) All of the above\n\n4. True/False: The author suggests that [concept] is primarily applicable in theoretical contexts rather than practical applications.";
-          break;
-      }
-      
-      setAiResponse(responseText);
-      
-      toast({
-        title: "Processing complete",
-        description: `Your file has been analyzed. ${
-          processingOption === 'summarize' ? 'Summary' : 
-          processingOption === 'expand' ? 'Expanded explanation' : 
-          'Practice questions'
-        } is now available.`
-      });
-    }, 3000);
+      // Simulate completion
+      setTimeout(() => {
+        setFiles(prev => 
+          prev.map(f => 
+            newUploadedFiles.some(nf => nf.id === f.id) 
+              ? { ...f, status: 'processed' as const } 
+              : f
+          )
+        );
+        
+        toast({
+          title: "Analysis Complete",
+          description: "Your materials have been processed and are ready for study.",
+        });
+      }, 3000);
+    }, 1500);
   };
-
-  const handleDeleteFile = (fileId: string) => {
-    setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
-    
-    toast({
-      title: "File removed",
-      description: "The file has been removed from your materials."
-    });
+  
+  const handleDeleteFile = (id: string) => {
+    setFiles(prev => prev.filter(file => file.id !== id));
   };
-
-  const handleAskQuestion = () => {
+  
+  const handleQuestionSubmit = () => {
     if (!question.trim()) return;
     
-    setIsProcessing(true);
+    toast({
+      title: "Question Submitted",
+      description: "Our AI tutor is working on an answer for you.",
+    });
+    
+    // Reset question
+    setQuestion('');
     
     // Simulate AI response
     setTimeout(() => {
-      setIsProcessing(false);
-      
-      setAiResponse(`Answer to your question: "${question}"\n\nBased on the materials you've uploaded and general knowledge, I can provide the following information:\n\nYour question touches on important concepts in this field. The key points to understand are that this topic involves multiple interconnected elements that work together to form a coherent system. Experts in the field generally agree on the fundamental principles, though there are some ongoing debates about specific applications and edge cases.\n\nWould you like me to elaborate on any particular aspect of this answer?`);
-      
       toast({
-        title: "Response ready",
-        description: "The AI has answered your question."
+        title: "Answer Ready",
+        description: "Check the AI Tutor tab for your response.",
       });
     }, 2000);
   };
@@ -114,218 +94,270 @@ const StudentHelpPage: React.FC = () => {
       <Navbar />
       <main className="flex-grow">
         <div className="bg-primary text-white py-12">
-          <div className="container mx-auto px-4">
+          <div className="container mx-auto px-4 text-center">
             <h1 className="text-3xl md:text-4xl font-serif font-bold mb-4">Student Help Center</h1>
-            <p className="text-lg max-w-3xl">
-              Upload your study materials and get AI-powered assistance with summaries, 
-              expanded explanations, and practice questions.
+            <p className="text-xl max-w-2xl mx-auto">
+              Upload your study materials for AI-powered analysis, summaries, and practice questions
             </p>
           </div>
         </div>
         
-        <div className="container mx-auto px-4 py-8">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
-              <TabsTrigger value="upload">Upload Materials</TabsTrigger>
-              <TabsTrigger value="process">Process Content</TabsTrigger>
-              <TabsTrigger value="ask">Ask AI Teacher</TabsTrigger>
+        <div className="container mx-auto px-4 py-12">
+          <Tabs defaultValue="materials" className="w-full">
+            <TabsList className="mb-8 w-full flex flex-wrap justify-center">
+              <TabsTrigger value="materials" className="flex-grow md:flex-grow-0">
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Materials
+              </TabsTrigger>
+              <TabsTrigger value="summaries" className="flex-grow md:flex-grow-0">
+                <BookText className="h-4 w-4 mr-2" />
+                Summaries
+              </TabsTrigger>
+              <TabsTrigger value="practice" className="flex-grow md:flex-grow-0">
+                <FileText className="h-4 w-4 mr-2" />
+                Practice Questions
+              </TabsTrigger>
+              <TabsTrigger value="tutor" className="flex-grow md:flex-grow-0">
+                <GraduationCap className="h-4 w-4 mr-2" />
+                AI Tutor
+              </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="upload" className="p-4 bg-white rounded-lg shadow">
-              <h2 className="text-2xl font-serif font-medium mb-6">Upload Your Study Materials</h2>
-              
-              <FileUploader onFilesSelected={handleFileUpload} />
-              
-              <div className="mt-8">
-                <h3 className="text-xl font-medium mb-4">Uploaded Materials</h3>
-                
-                {uploadedFiles.length > 0 ? (
-                  <div className="space-y-4">
-                    {uploadedFiles.map(file => (
-                      <FileItem 
-                        key={file.id}
-                        file={file}
-                        onDelete={() => handleDeleteFile(file.id)}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-10 border border-dashed rounded-lg">
-                    <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                    <p className="mt-4 text-gray-600">No files uploaded yet</p>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="process" className="space-y-6 p-4 bg-white rounded-lg shadow">
-              <h2 className="text-2xl font-serif font-medium mb-6">Process Your Materials</h2>
-              
+            <TabsContent value="materials" className="space-y-8">
               <Card>
                 <CardHeader>
-                  <CardTitle>Choose Processing Option</CardTitle>
+                  <CardTitle>Upload Study Materials</CardTitle>
                   <CardDescription>
-                    Select how you want the AI to process your study materials
+                    Upload textbooks, notes, slides or any study materials for AI analysis.
+                    Supported formats: PDF, DOC, DOCX, PPT, PPTX, TXT, JPG, PNG
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <Card 
-                        className={`cursor-pointer border-2 ${processingOption === 'summarize' ? 'border-primary' : 'border-transparent'}`}
-                        onClick={() => setProcessingOption('summarize')}
-                      >
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Summarize</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm">Create a concise summary of key points</p>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card 
-                        className={`cursor-pointer border-2 ${processingOption === 'expand' ? 'border-primary' : 'border-transparent'}`}
-                        onClick={() => setProcessingOption('expand')}
-                      >
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Expand</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm">Get detailed explanations of concepts</p>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card 
-                        className={`cursor-pointer border-2 ${processingOption === 'questions' ? 'border-primary' : 'border-transparent'}`}
-                        onClick={() => setProcessingOption('questions')}
-                      >
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Questions</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm">Generate practice questions and answers</p>
-                        </CardContent>
-                      </Card>
+                  <FileUploader 
+                    onFilesAccepted={handleFileUpload}
+                    maxSize={10485760} // 10 MB
+                    accept={{
+                      'application/pdf': ['.pdf'],
+                      'application/msword': ['.doc'],
+                      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+                      'application/vnd.ms-powerpoint': ['.ppt'],
+                      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+                      'text/plain': ['.txt'],
+                      'image/jpeg': ['.jpg', '.jpeg'],
+                      'image/png': ['.png'],
+                    }}
+                  />
+                </CardContent>
+              </Card>
+              
+              {files.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Uploaded Materials</CardTitle>
+                    <CardDescription>
+                      Your files will be automatically analyzed upon upload
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {files.map(file => (
+                        <FileItem 
+                          key={file.id} 
+                          file={file}
+                          onDelete={() => handleDeleteFile(file.id)} 
+                        />
+                      ))}
                     </div>
-                    
-                    <div>
-                      <Label>Select Material to Process</Label>
-                      {uploadedFiles.length > 0 ? (
-                        <div className="mt-2 space-y-2">
-                          {uploadedFiles.map(file => (
-                            <Card key={file.id} className="p-4 flex justify-between items-center">
-                              <div className="flex items-center">
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="summaries">
+              {files.filter(file => file.status === 'processed').length > 0 ? (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Generated Summaries</CardTitle>
+                      <CardDescription>
+                        AI-generated summaries of your uploaded materials
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        {files.filter(file => file.status === 'processed').map(file => (
+                          <Card key={file.id}>
+                            <CardHeader>
+                              <CardTitle className="text-lg font-medium">{file.name}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-muted-foreground">
                                 {file.type.includes('image') ? (
-                                  <FileImage className="h-5 w-5 mr-2 text-blue-500" />
-                                ) : file.type.includes('video') ? (
-                                  <FileVideo className="h-5 w-5 mr-2 text-red-500" />
+                                  <>The AI has analyzed this image and identified key concepts related to 
+                                  the subject matter. The main topics detected include molecular structures, 
+                                  cellular processes, and biochemical pathways.</>
                                 ) : (
-                                  <FileText className="h-5 w-5 mr-2 text-green-500" />
+                                  <>The AI has analyzed this document and created a comprehensive summary 
+                                  highlighting the key concepts, theories, and principles. The summary is 
+                                  approximately 30% of the original content length while maintaining all 
+                                  essential information.</>
                                 )}
-                                <span>{file.name}</span>
+                              </p>
+                              <div className="mt-4 flex space-x-2">
+                                <Button>View Full Summary</Button>
+                                <Button variant="outline">Generate Flashcards</Button>
                               </div>
-                              <Button 
-                                size="sm" 
-                                onClick={() => handleProcessFile(file.id)}
-                                disabled={isProcessing || file.status === 'processed'}
-                              >
-                                {file.status === 'processed' ? 'Processed' : 'Process'}
-                              </Button>
-                            </Card>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <Card className="p-8 text-center">
+                  <CardContent>
+                    <div className="flex flex-col items-center">
+                      <FileText className="h-16 w-16 text-gray-300 mb-4" />
+                      <h3 className="text-xl font-medium mb-2">No Summaries Available</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Upload some study materials first, and we'll generate summaries for you
+                      </p>
+                      <Button variant="outline" onClick={() => document.querySelector('[data-value="materials"]')?.dispatchEvent(new Event('click'))}>
+                        Upload Materials
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="practice">
+              {files.filter(file => file.status === 'processed').length > 0 ? (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Practice Questions</CardTitle>
+                      <CardDescription>
+                        AI-generated questions based on your study materials
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        {files.filter(file => file.status === 'processed').map(file => (
+                          <Card key={file.id}>
+                            <CardHeader>
+                              <CardTitle className="text-lg font-medium">{file.name}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-muted-foreground">
+                                The AI has generated a set of practice questions based on the content in this file.
+                                These include multiple-choice questions, fill-in-the-blanks, and short answer questions.
+                              </p>
+                              <div className="mt-4 flex space-x-2">
+                                <Button>Start Practice Quiz</Button>
+                                <Button variant="outline">Generate More Questions</Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <Card className="p-8 text-center">
+                  <CardContent>
+                    <div className="flex flex-col items-center">
+                      <FileText className="h-16 w-16 text-gray-300 mb-4" />
+                      <h3 className="text-xl font-medium mb-2">No Practice Questions Available</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Upload some study materials first, and we'll generate practice questions for you
+                      </p>
+                      <Button variant="outline" onClick={() => document.querySelector('[data-value="materials"]')?.dispatchEvent(new Event('click'))}>
+                        Upload Materials
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="tutor">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2">
+                  <Card className="h-full">
+                    <CardHeader>
+                      <CardTitle>AI Tutor Chat</CardTitle>
+                      <CardDescription>
+                        Ask questions about your courses or uploaded materials
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[500px] flex flex-col">
+                      <div className="flex-grow bg-gray-50 rounded-md p-4 mb-4 overflow-y-auto">
+                        <div className="flex items-start mb-4">
+                          <Avatar className="mr-2">
+                            <AvatarImage src="/placeholder.svg" />
+                            <AvatarFallback>AI</AvatarFallback>
+                          </Avatar>
+                          <div className="bg-white p-3 rounded-lg shadow-sm">
+                            <p>Hello! I'm your AI tutor. Ask me anything about your courses or uploaded materials.</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Textarea 
+                          placeholder="Type your question here..." 
+                          className="flex-grow"
+                          value={question}
+                          onChange={(e) => setQuestion(e.target.value)}
+                        />
+                        <Button onClick={handleQuestionSubmit}>Send</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                <div>
+                  <Card className="h-full">
+                    <CardHeader>
+                      <CardTitle>Learning Resources</CardTitle>
+                      <CardDescription>
+                        Helpful resources based on your materials
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {files.filter(file => file.status === 'processed').length > 0 ? (
+                        <div className="space-y-4">
+                          {files.filter(file => file.status === 'processed').map(file => (
+                            <div key={file.id} className="flex items-center space-x-3">
+                              {file.type.includes('image') ? 
+                                <FileImage className="h-5 w-5 text-blue-500" /> :
+                                file.type.includes('video') ?
+                                  <FileVideo className="h-5 w-5 text-red-500" /> :
+                                  <FileText className="h-5 w-5 text-green-500" />
+                              }
+                              <div>
+                                <p className="text-sm font-medium">{file.name}</p>
+                                <p className="text-xs text-muted-foreground">5 concepts identified</p>
+                              </div>
+                            </div>
                           ))}
+                          <Button className="w-full mt-4" variant="outline">
+                            Generate Study Guide
+                          </Button>
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-500 mt-2">
-                          No materials available. Please upload files first.
-                        </p>
+                        <div className="text-center py-6">
+                          <p className="text-muted-foreground text-sm">
+                            Upload materials to get personalized resources
+                          </p>
+                        </div>
                       )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {aiResponse && (
-                <Card className="mt-8">
-                  <CardHeader>
-                    <CardTitle>AI Analysis Result</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-gray-50 p-4 rounded-md whitespace-pre-line">
-                      {aiResponse}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="ask" className="space-y-6 p-4 bg-white rounded-lg shadow">
-              <h2 className="text-2xl font-serif font-medium mb-6">Ask the AI Teacher</h2>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Ask a Question</CardTitle>
-                  <CardDescription>
-                    Get help with specific topics from your course materials
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="question">Your Question</Label>
-                      <Textarea 
-                        id="question"
-                        placeholder="e.g., Can you explain the concept of photosynthesis in more detail?"
-                        className="mt-1"
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Reference Materials</Label>
-                      <div className="mt-2">
-                        {uploadedFiles.length > 0 ? (
-                          <div className="text-sm">
-                            The AI will use {uploadedFiles.length} uploaded file(s) as reference.
-                          </div>
-                        ) : (
-                          <div className="text-sm text-amber-600">
-                            No reference materials. The AI will use general knowledge only.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <Button 
-                      className="w-full"
-                      onClick={handleAskQuestion}
-                      disabled={isProcessing || !question.trim()}
-                    >
-                      {isProcessing ? (
-                        <>Processing...</>
-                      ) : (
-                        <>
-                          <Robot className="mr-2 h-4 w-4" />
-                          Ask AI Teacher
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {aiResponse && (
-                <Card className="mt-8">
-                  <CardHeader>
-                    <CardTitle>AI Teacher Response</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-gray-50 p-4 rounded-md whitespace-pre-line">
-                      {aiResponse}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
