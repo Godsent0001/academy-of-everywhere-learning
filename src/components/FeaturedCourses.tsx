@@ -26,7 +26,7 @@ export const FeaturedCourses: React.FC = () => {
     .sort((a, b) => b.lessons.length - a.lessons.length)
     .slice(0, 4);
 
-  // If we don't have enough trending courses, add other courses until we have 4
+  // If we don't have enough trending courses, add other popular courses until we have 4
   const featuredCourses = trendingCourses.length < 4 
     ? [...trendingCourses, ...allCourses.filter(course => !trendingCourses.includes(course)).slice(0, 4 - trendingCourses.length)]
     : trendingCourses;

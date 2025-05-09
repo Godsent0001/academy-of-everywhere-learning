@@ -17,7 +17,7 @@ import CertificatePage from "./pages/CertificatePage";
 import AboutPage from "./pages/AboutPage";
 import SignInPage from "./pages/auth/SignInPage";
 import SignUpPage from "./pages/auth/SignUpPage";
-import StudentMaterialsPage from "./pages/student/StudentMaterialsPage";
+import StudentHelpPage from "./pages/student/StudentHelpPage";
 
 const queryClient = new QueryClient();
 
@@ -40,7 +40,7 @@ const App = () => (
           <Route path="/about" element={<AboutPage />} />
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/student/materials" element={<StudentMaterialsPage />} />
+          <Route path="/student/help" element={<StudentHelpPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
