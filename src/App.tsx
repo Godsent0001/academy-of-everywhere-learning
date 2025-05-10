@@ -3,7 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import FacultiesPage from "./pages/FacultiesPage";
@@ -17,10 +18,21 @@ import CertificatePage from "./pages/CertificatePage";
 import AboutPage from "./pages/AboutPage";
 import SignInPage from "./pages/auth/SignInPage";
 import SignUpPage from "./pages/auth/SignUpPage";
-import StudentHelpPage from "./pages/student/StudentHelpPage";
+import StudyHelpPage from "./pages/student/StudyHelpPage";
 
 // Create the query client
 const queryClient = new QueryClient();
+
+// ScrollToTop component to handle scrolling on route change
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+};
 
 const App = () => (
   <BrowserRouter>
@@ -28,6 +40,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/faculties" element={<FacultiesPage />} />
@@ -41,8 +54,8 @@ const App = () => (
           <Route path="/about" element={<AboutPage />} />
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/student/help" element={<StudentHelpPage />} />
-          <Route path="/student/materials" element={<StudentHelpPage />} />
+          <Route path="/student/help" element={<StudyHelpPage />} />
+          <Route path="/student/materials" element={<StudyHelpPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>

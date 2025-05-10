@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -19,9 +18,13 @@ const AboutPage: React.FC = () => {
           </div>
           <div className="absolute inset-0 z-0 opacity-20">
             <img 
-              src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80"
+              src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3"
               className="w-full h-full object-cover"
               alt="Campus view"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-4.0.3";
+              }}
             />
           </div>
         </div>
@@ -44,9 +47,13 @@ const AboutPage: React.FC = () => {
             </div>
             <div className="rounded-lg overflow-hidden shadow-lg">
               <img 
-                src="https://images.unsplash.com/photo-1517486808906-6ca8b3f8e1c1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1247&q=80"
+                src="https://images.unsplash.com/photo-1517486808906-6ca8b3f8e1c1?ixlib=rb-4.0.3"
                 alt="Students learning"
                 className="w-full h-80 object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3";
+                }}
               />
             </div>
           </div>
@@ -137,7 +144,7 @@ const AboutPage: React.FC = () => {
               <div className="text-center">
                 <div className="w-36 h-36 rounded-full overflow-hidden mx-auto mb-4">
                   <img 
-                    src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=387&q=80"
+                    src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3"
                     alt="Dr. James Wilson"
                     className="w-full h-full object-cover"
                   />
@@ -151,7 +158,7 @@ const AboutPage: React.FC = () => {
               <div className="text-center">
                 <div className="w-36 h-36 rounded-full overflow-hidden mx-auto mb-4">
                   <img 
-                    src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=388&q=80"
+                    src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3"
                     alt="Dr. Elena Rodriguez"
                     className="w-full h-full object-cover"
                   />
@@ -165,7 +172,7 @@ const AboutPage: React.FC = () => {
               <div className="text-center">
                 <div className="w-36 h-36 rounded-full overflow-hidden mx-auto mb-4">
                   <img 
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=387&q=80"
+                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3"
                     alt="Dr. Michael Chang"
                     className="w-full h-full object-cover"
                   />
