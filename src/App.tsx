@@ -19,6 +19,11 @@ import AboutPage from "./pages/AboutPage";
 import SignInPage from "./pages/auth/SignInPage";
 import SignUpPage from "./pages/auth/SignUpPage";
 import StudyHelpPage from "./pages/student/StudyHelpPage";
+import StudentHelpPage from "./pages/student/StudentHelpPage";
+import TokensPage from "./pages/student/TokensPage";
+import PaymentSuccessPage from "./pages/student/PaymentSuccessPage";
+import PaymentCanceledPage from "./pages/student/PaymentCanceledPage";
+import StudyGroupPage from "./pages/student/StudyGroupPage";
 
 // Create the query client
 const queryClient = new QueryClient();
@@ -55,7 +60,11 @@ const App = () => (
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/student/help" element={<StudyHelpPage />} />
-          <Route path="/student/materials" element={<StudyHelpPage />} />
+          <Route path="/student/materials" element={<StudentHelpPage />} />
+          <Route path="/student/tokens" element={<TokensPage />} />
+          <Route path="/payment-success" element={<PaymentSuccessPage />} />
+          <Route path="/payment-canceled" element={<PaymentCanceledPage />} />
+          <Route path="/study-group/:id" element={<StudyGroupPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,22 +10,89 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FileUploader } from '@/components/FileUploader';
 import { FileItem } from '@/components/FileItem';
-import { BookText, FileImage, FileText, Upload, FileVideo, GraduationCap } from 'lucide-react';
+import { BookText, FileImage, FileText, Upload, FileVideo, GraduationCap, AlertCircle, Coins, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+interface UserTokens {
+  tokens_available: number;
+  tokens_used: number;
+}
+
+interface ProcessedFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  uploadDate: string;
+  status: 'uploaded' | 'processing' | 'processed';
+  summary?: string;
+  questions?: Array<{
+    question: string;
+    options: string[];
+    answer: string;
+    explanation: string;
+  }>;
+}
 
 const StudentHelpPage: React.FC = () => {
   const { toast } = useToast();
-  const [files, setFiles] = useState<{
-    id: string;
-    name: string;
-    size: number;
-    type: string;
-    uploadDate: string;
-    status: 'uploaded' | 'processing' | 'processed';
-  }[]>([]);
+  const navigate = useNavigate();
+  const [files, setFiles] = useState<ProcessedFile[]>([]);
   const [question, setQuestion] = useState('');
+  const [user, setUser] = useState<any>(null);
+  const [userTokens, setUserTokens] = useState<UserTokens | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [processingFile, setProcessingFile] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+    };
+    getUser();
+  }, []);
+  
+  useEffect(() => {
+    const fetchUserTokens = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('user_tokens')
+          .select('tokens_available, tokens_used')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching tokens:', error);
+          return;
+        }
+        
+        setUserTokens(data || { tokens_available: 0, tokens_used: 0 });
+        
+      } catch (error) {
+        console.error('Error fetching user tokens:', error);
+      }
+    };
+    
+    if (user) {
+      fetchUserTokens();
+    }
+  }, [user]);
 
   const handleFileUpload = (newFiles: File[]) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to upload and process files",
+        variant: "destructive",
+      });
+      navigate('/signin');
+      return;
+    }
+    
     const newUploadedFiles = newFiles.map(file => ({
       id: Math.random().toString(36).substring(2, 9),
       name: file.name,
@@ -35,32 +104,115 @@ const StudentHelpPage: React.FC = () => {
     
     setFiles(prev => [...prev, ...newUploadedFiles]);
     
-    // Simulate processing
-    setTimeout(() => {
+    toast({
+      title: "Files uploaded",
+      description: `${newFiles.length} file(s) uploaded successfully. Click 'Process' to analyze.`,
+    });
+  };
+  
+  const handleProcessFile = async (fileId: string) => {
+    const fileToProcess = files.find(f => f.id === fileId);
+    if (!fileToProcess) return;
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to process files",
+        variant: "destructive",
+      });
+      navigate('/signin');
+      return;
+    }
+    
+    if (!userTokens || userTokens.tokens_available < 10) {
+      toast({
+        title: "Insufficient tokens",
+        description: "You need at least 10 tokens to process a file. Please purchase more tokens.",
+        variant: "destructive",
+      });
+      navigate('/student/tokens');
+      return;
+    }
+    
+    try {
+      setProcessingFile(fileId);
+      
+      // Update file status to processing
       setFiles(prev => 
         prev.map(f => 
-          newUploadedFiles.some(nf => nf.id === f.id) 
+          f.id === fileId 
             ? { ...f, status: 'processing' as const } 
             : f
         )
       );
       
-      // Simulate completion
-      setTimeout(() => {
-        setFiles(prev => 
-          prev.map(f => 
-            newUploadedFiles.some(nf => nf.id === f.id) 
-              ? { ...f, status: 'processed' as const } 
-              : f
-          )
-        );
-        
-        toast({
-          title: "Analysis Complete",
-          description: "Your materials have been processed and are ready for study.",
-        });
-      }, 3000);
-    }, 1500);
+      // Call the process-material Edge Function
+      const { data, error } = await supabase.functions.invoke('process-material', {
+        body: { 
+          fileId,
+          fileName: fileToProcess.name
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data.error) {
+        if (data.tokensAvailable < data.tokensNeeded) {
+          toast({
+            title: "Insufficient tokens",
+            description: `You need ${data.tokensNeeded} tokens to process this file, but you only have ${data.tokensAvailable} tokens available.`,
+            variant: "destructive",
+          });
+          navigate('/student/tokens');
+          return;
+        }
+        throw new Error(data.error);
+      }
+      
+      // Update file status to processed and add generated content
+      setFiles(prev => 
+        prev.map(f => 
+          f.id === fileId 
+            ? { 
+                ...f, 
+                status: 'processed' as const,
+                summary: data.summary,
+                questions: data.questions
+              } 
+            : f
+        )
+      );
+      
+      // Update user tokens
+      setUserTokens(prev => prev ? {
+        tokens_available: prev.tokens_available - data.tokensUsed,
+        tokens_used: prev.tokens_used + data.tokensUsed
+      } : null);
+      
+      toast({
+        title: "Analysis Complete",
+        description: "Your material has been processed successfully.",
+      });
+      
+    } catch (error: any) {
+      toast({
+        title: "Processing Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      
+      // Revert file status to uploaded
+      setFiles(prev => 
+        prev.map(f => 
+          f.id === fileId 
+            ? { ...f, status: 'uploaded' as const } 
+            : f
+        )
+      );
+      
+    } finally {
+      setProcessingFile(null);
+    }
   };
   
   const handleDeleteFile = (id: string) => {
@@ -69,6 +221,26 @@ const StudentHelpPage: React.FC = () => {
   
   const handleQuestionSubmit = () => {
     if (!question.trim()) return;
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to use the AI tutor",
+        variant: "destructive",
+      });
+      navigate('/signin');
+      return;
+    }
+    
+    if (!userTokens || userTokens.tokens_available < 5) {
+      toast({
+        title: "Insufficient tokens",
+        description: "You need at least 5 tokens to ask a question. Please purchase more tokens.",
+        variant: "destructive",
+      });
+      navigate('/student/tokens');
+      return;
+    }
     
     toast({
       title: "Question Submitted",
@@ -84,44 +256,92 @@ const StudentHelpPage: React.FC = () => {
         title: "Answer Ready",
         description: "Check the AI Tutor tab for your response.",
       });
+      
+      // Update user tokens (simulate token usage)
+      setUserTokens(prev => prev ? {
+        tokens_available: prev.tokens_available - 5,
+        tokens_used: prev.tokens_used + 5
+      } : null);
+      
     }, 2000);
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col max-w-full overflow-x-hidden">
       <Navbar />
-      <main className="flex-grow">
-        <div className="bg-primary text-white py-12">
+      <main className="flex-grow w-full">
+        <div className="bg-primary text-white py-12 w-full">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-3xl md:text-4xl font-serif font-bold mb-4">Student Help Center</h1>
             <p className="text-xl max-w-2xl mx-auto">
               Upload your study materials for AI-powered analysis, summaries, and practice questions
             </p>
+            
+            {userTokens && (
+              <div className="mt-6 flex flex-wrap justify-center gap-4">
+                <div className="bg-white/10 py-2 px-4 rounded-full flex items-center">
+                  <Coins className="h-4 w-4 mr-2" />
+                  <span>{userTokens.tokens_available} tokens available</span>
+                </div>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => navigate('/student/tokens')}
+                >
+                  Get More Tokens
+                </Button>
+              </div>
+            )}
           </div>
         </div>
         
         <div className="container mx-auto px-4 py-12">
           <Tabs defaultValue="materials" className="w-full">
-            <TabsList className="mb-8 w-full flex flex-wrap justify-center">
-              <TabsTrigger value="materials" className="flex-grow md:flex-grow-0">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Materials
-              </TabsTrigger>
-              <TabsTrigger value="summaries" className="flex-grow md:flex-grow-0">
-                <BookText className="h-4 w-4 mr-2" />
-                Summaries
-              </TabsTrigger>
-              <TabsTrigger value="practice" className="flex-grow md:flex-grow-0">
-                <FileText className="h-4 w-4 mr-2" />
-                Practice Questions
-              </TabsTrigger>
-              <TabsTrigger value="tutor" className="flex-grow md:flex-grow-0">
-                <GraduationCap className="h-4 w-4 mr-2" />
-                AI Tutor
-              </TabsTrigger>
-            </TabsList>
+            <div className="w-full overflow-x-auto scrollbar-hide">
+              <TabsList className="mb-8 w-auto inline-flex">
+                <TabsTrigger value="materials" className="flex-grow md:flex-grow-0">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Materials
+                </TabsTrigger>
+                <TabsTrigger value="summaries" className="flex-grow md:flex-grow-0">
+                  <BookText className="h-4 w-4 mr-2" />
+                  Summaries
+                </TabsTrigger>
+                <TabsTrigger value="practice" className="flex-grow md:flex-grow-0">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Practice Questions
+                </TabsTrigger>
+                <TabsTrigger value="tutor" className="flex-grow md:flex-grow-0">
+                  <GraduationCap className="h-4 w-4 mr-2" />
+                  AI Tutor
+                </TabsTrigger>
+              </TabsList>
+            </div>
             
-            <TabsContent value="materials" className="space-y-8">
+            <TabsContent value="materials" className="space-y-8 overflow-x-hidden">
+              {!user && (
+                <Alert variant="warning" className="mb-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Authentication Required</AlertTitle>
+                  <AlertDescription>
+                    Please <Button variant="link" className="p-0 h-auto font-normal" onClick={() => navigate('/signin')}>sign in</Button> to upload and process materials.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {user && userTokens && userTokens.tokens_available < 10 && (
+                <Alert variant="warning" className="mb-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Low Token Balance</AlertTitle>
+                  <AlertDescription>
+                    You have {userTokens.tokens_available} tokens available. Processing materials requires at least 10 tokens.{' '}
+                    <Button variant="link" className="p-0 h-auto font-normal" onClick={() => navigate('/student/tokens')}>
+                      Purchase more tokens
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <Card>
                 <CardHeader>
                   <CardTitle>Upload Study Materials</CardTitle>
@@ -153,17 +373,46 @@ const StudentHelpPage: React.FC = () => {
                   <CardHeader>
                     <CardTitle>Uploaded Materials</CardTitle>
                     <CardDescription>
-                      Your files will be automatically analyzed upon upload
+                      Click "Process" to analyze your materials with AI
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
                       {files.map(file => (
-                        <FileItem 
-                          key={file.id} 
-                          file={file}
-                          onDelete={() => handleDeleteFile(file.id)} 
-                        />
+                        <div key={file.id} className="flex items-center justify-between border rounded-lg p-3">
+                          <FileItem 
+                            file={file}
+                            onDelete={() => handleDeleteFile(file.id)} 
+                          />
+                          {file.status === 'uploaded' && (
+                            <Button 
+                              className="ml-4"
+                              onClick={() => handleProcessFile(file.id)}
+                              disabled={processingFile === file.id}
+                            >
+                              {processingFile === file.id ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Processing...
+                                </>
+                              ) : (
+                                'Process'
+                              )}
+                            </Button>
+                          )}
+                          {file.status === 'processing' && processingFile !== file.id && (
+                            <div className="ml-4 text-amber-500 font-medium flex items-center">
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Processing...
+                            </div>
+                          )}
+                          {file.status === 'processed' && (
+                            <div className="ml-4 text-green-600 font-medium flex items-center">
+                              <Check className="h-4 w-4 mr-1" />
+                              Processed
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </CardContent>
@@ -171,8 +420,8 @@ const StudentHelpPage: React.FC = () => {
               )}
             </TabsContent>
             
-            <TabsContent value="summaries">
-              {files.filter(file => file.status === 'processed').length > 0 ? (
+            <TabsContent value="summaries" className="overflow-x-hidden">
+              {files.filter(file => file.status === 'processed' && file.summary).length > 0 ? (
                 <div className="space-y-6">
                   <Card>
                     <CardHeader>
@@ -183,23 +432,14 @@ const StudentHelpPage: React.FC = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-6">
-                        {files.filter(file => file.status === 'processed').map(file => (
+                        {files.filter(file => file.status === 'processed' && file.summary).map(file => (
                           <Card key={file.id}>
                             <CardHeader>
                               <CardTitle className="text-lg font-medium">{file.name}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                              <p className="text-muted-foreground">
-                                {file.type.includes('image') ? (
-                                  <>The AI has analyzed this image and identified key concepts related to 
-                                  the subject matter. The main topics detected include molecular structures, 
-                                  cellular processes, and biochemical pathways.</>
-                                ) : (
-                                  <>The AI has analyzed this document and created a comprehensive summary 
-                                  highlighting the key concepts, theories, and principles. The summary is 
-                                  approximately 30% of the original content length while maintaining all 
-                                  essential information.</>
-                                )}
+                              <p className="text-gray-700 whitespace-pre-line">
+                                {file.summary}
                               </p>
                               <div className="mt-4 flex space-x-2">
                                 <Button>View Full Summary</Button>
@@ -219,7 +459,7 @@ const StudentHelpPage: React.FC = () => {
                       <FileText className="h-16 w-16 text-gray-300 mb-4" />
                       <h3 className="text-xl font-medium mb-2">No Summaries Available</h3>
                       <p className="text-muted-foreground mb-6">
-                        Upload some study materials first, and we'll generate summaries for you
+                        Upload some study materials and process them to generate summaries
                       </p>
                       <Button variant="outline" onClick={() => document.querySelector('[data-value="materials"]')?.dispatchEvent(new Event('click'))}>
                         Upload Materials
@@ -230,8 +470,8 @@ const StudentHelpPage: React.FC = () => {
               )}
             </TabsContent>
             
-            <TabsContent value="practice">
-              {files.filter(file => file.status === 'processed').length > 0 ? (
+            <TabsContent value="practice" className="overflow-x-hidden">
+              {files.filter(file => file.status === 'processed' && file.questions && file.questions.length > 0).length > 0 ? (
                 <div className="space-y-6">
                   <Card>
                     <CardHeader>
@@ -242,16 +482,34 @@ const StudentHelpPage: React.FC = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-6">
-                        {files.filter(file => file.status === 'processed').map(file => (
+                        {files.filter(file => file.status === 'processed' && file.questions && file.questions.length > 0).map(file => (
                           <Card key={file.id}>
                             <CardHeader>
                               <CardTitle className="text-lg font-medium">{file.name}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                              <p className="text-muted-foreground">
-                                The AI has generated a set of practice questions based on the content in this file.
-                                These include multiple-choice questions, fill-in-the-blanks, and short answer questions.
-                              </p>
+                              <div className="space-y-6">
+                                {file.questions?.map((q, i) => (
+                                  <div key={i} className="p-4 border rounded-lg">
+                                    <p className="font-medium mb-2">Question {i+1}: {q.question}</p>
+                                    <div className="space-y-1 ml-4 mb-3">
+                                      {q.options.map((option, j) => (
+                                        <div key={j} className="flex items-center space-x-2">
+                                          <div className={`w-5 h-5 flex items-center justify-center rounded-full border ${option === q.answer ? 'bg-primary text-white border-primary' : 'border-gray-400'}`}>
+                                            {String.fromCharCode(65 + j)}
+                                          </div>
+                                          <span>{option}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <div className="bg-gray-50 p-3 rounded-md">
+                                      <p className="font-medium">Explanation:</p>
+                                      <p className="text-gray-700">{q.explanation}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              
                               <div className="mt-4 flex space-x-2">
                                 <Button>Start Practice Quiz</Button>
                                 <Button variant="outline">Generate More Questions</Button>
@@ -270,7 +528,7 @@ const StudentHelpPage: React.FC = () => {
                       <FileText className="h-16 w-16 text-gray-300 mb-4" />
                       <h3 className="text-xl font-medium mb-2">No Practice Questions Available</h3>
                       <p className="text-muted-foreground mb-6">
-                        Upload some study materials first, and we'll generate practice questions for you
+                        Upload and process study materials to generate practice questions
                       </p>
                       <Button variant="outline" onClick={() => document.querySelector('[data-value="materials"]')?.dispatchEvent(new Event('click'))}>
                         Upload Materials
@@ -281,7 +539,7 @@ const StudentHelpPage: React.FC = () => {
               )}
             </TabsContent>
             
-            <TabsContent value="tutor">
+            <TabsContent value="tutor" className="overflow-x-hidden">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2">
                   <Card className="h-full">
@@ -310,8 +568,18 @@ const StudentHelpPage: React.FC = () => {
                           value={question}
                           onChange={(e) => setQuestion(e.target.value)}
                         />
-                        <Button onClick={handleQuestionSubmit}>Send</Button>
+                        <Button onClick={handleQuestionSubmit}>
+                          Send{userTokens && <span className="ml-2 text-xs opacity-75">(-5 tokens)</span>}
+                        </Button>
                       </div>
+                      {userTokens && userTokens.tokens_available < 5 && (
+                        <p className="text-red-500 text-sm mt-2">
+                          You don't have enough tokens to ask questions. 
+                          <Button variant="link" className="p-0 h-auto text-sm" onClick={() => navigate('/student/tokens')}>
+                            Purchase more tokens
+                          </Button>
+                        </p>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
@@ -337,7 +605,7 @@ const StudentHelpPage: React.FC = () => {
                               }
                               <div>
                                 <p className="text-sm font-medium">{file.name}</p>
-                                <p className="text-xs text-muted-foreground">5 concepts identified</p>
+                                <p className="text-xs text-muted-foreground">Processed on {new Date(file.uploadDate).toLocaleDateString()}</p>
                               </div>
                             </div>
                           ))}
@@ -352,6 +620,24 @@ const StudentHelpPage: React.FC = () => {
                           </p>
                         </div>
                       )}
+                      
+                      {userTokens && (
+                        <div className="mt-6 p-4 rounded-md bg-gray-50">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm">Available Tokens:</span>
+                            <span className="font-medium">{userTokens.tokens_available}</span>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => navigate('/student/tokens')}
+                          >
+                            <Coins className="h-4 w-4 mr-2" />
+                            Manage Tokens
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
@@ -364,5 +650,20 @@ const StudentHelpPage: React.FC = () => {
     </div>
   );
 };
+
+const Check = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M20 6 9 17l-5-5" />
+  </svg>
+);
 
 export default StudentHelpPage;
