@@ -1,3 +1,4 @@
+
 import { Faculty } from "@/types";
 
 export const faculties: Faculty[] = [
@@ -732,4 +733,21 @@ export const faculties: Faculty[] = [
                 content: "This lesson covers classification and regression techniques, including linear models, decision trees, and neural networks...",
                 duration: "75 minutes",
                 order: 1,
-                slug
+                slug: "supervised-learning",
+                questions: [
+                  {
+                    id: "300003",
+                    question: "Which of the following is NOT a type of supervised learning algorithm?",
+                    answer: "k-means clustering",
+                    options: ["Linear regression", "Decision trees", "k-means clustering", "Support vector machines"],
+                    type: "multiple-choice"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+];

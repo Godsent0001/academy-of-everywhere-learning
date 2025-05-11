@@ -1,9 +1,9 @@
-
 export interface Faculty {
   id: string;
   name: string;
   slug: string;
-  image: string;
+  image?: string;
+  icon?: string;
   description: string;
   departments: Department[];
 }
@@ -12,9 +12,9 @@ export interface Department {
   id: string;
   name: string;
   slug: string;
-  image: string;
+  image?: string;
   description: string;
-  facultyId: string;  // Added facultyId field
+  facultyId: string;
   courses: Course[];
 }
 
@@ -24,7 +24,7 @@ export interface Course {
   slug: string;
   image: string;
   description: string;
-  departmentId: string;  // Added departmentId field
+  departmentId: string;
   lessons: Lesson[];
   duration: string;
   modules?: string[];
@@ -43,7 +43,7 @@ export interface Lesson {
   duration: string;
   content: string;
   description: string;
-  courseId: string;  // Added courseId field
+  courseId: string;
   questions?: Question[];
 }
 
@@ -52,8 +52,7 @@ export interface Question {
   question: string;
   type: 'multiple-choice' | 'true-false' | 'open-ended';
   options?: string[];
-  answer?: string;
-  lessonId?: string;  // Added lessonId field
+  answer: string;
 }
 
 // Define exam types
