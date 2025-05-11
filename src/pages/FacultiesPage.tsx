@@ -1,8 +1,7 @@
-
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { faculties } from '@/data/faculties';
+import { faculties } from '@/data/faculty';
 import FacultyCard from '@/components/FacultyCard';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';

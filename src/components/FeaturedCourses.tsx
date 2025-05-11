@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { faculties } from '@/data/faculties';
+import { faculties } from '@/data/faculty';
 import CourseCard from './CourseCard';
 import { ChevronRight } from 'lucide-react';
 

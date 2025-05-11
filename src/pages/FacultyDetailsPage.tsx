@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CourseCard from '@/components/CourseCard';
-import { faculties } from '@/data/faculties';
+import { faculties } from '@/data/faculty';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Faculty, Department, Course } from '@/types';
 

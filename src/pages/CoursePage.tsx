@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Course } from '@/types';
-import { faculties } from '@/data/faculties';
+import { faculties } from '@/data/faculty';
 import CourseHeader from '@/components/course/CourseHeader';
 import CourseTabs from '@/components/course/CourseTabs';
 import CourseSidebar from '@/components/course/CourseSidebar';
