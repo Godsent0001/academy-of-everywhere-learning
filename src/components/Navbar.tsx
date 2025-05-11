@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useTheme } from "@/components/ui/use-theme"
-import { Button } from "@/components/ui/button"
+import { useTheme } from '@/hooks/use-theme';
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,9 +10,18 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/hooks/use-auth';
-import { MoonIcon, SunIcon, GraduationCap, Book, HelpCircle, User, Key } from 'lucide-react';
+import { 
+  MoonIcon, 
+  SunIcon, 
+  GraduationCap, 
+  Book, 
+  HelpCircle, 
+  User, 
+  Key,
+  Settings
+} from 'lucide-react';
 import SubmitCourse from './SubmitCourse';
 
 const Navbar: React.FC = () => {
@@ -56,6 +66,12 @@ const Navbar: React.FC = () => {
               {user ? (
                 <>
                   <DropdownMenuItem asChild>
+                    <Link to="/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link to="/student/help">
                       <HelpCircle className="mr-2 h-4 w-4" />
                       Study Help
@@ -71,6 +87,12 @@ const Navbar: React.FC = () => {
                     <Link to="/student/tokens">
                       <GraduationCap className="mr-2 h-4 w-4" />
                       My Tokens
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

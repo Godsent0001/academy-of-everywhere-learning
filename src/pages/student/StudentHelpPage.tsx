@@ -1,647 +1,798 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { FileUploader } from '@/components/FileUploader';
-import { FileItem } from '@/components/FileItem';
-import { BookText, FileImage, FileText, Upload, FileVideo, GraduationCap, AlertCircle, Coins, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from '@/hooks/use-toast';
+import { FileUp, BookOpen, MessageSquare, HelpCircle, Upload, File, FilePlus, Clock } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useAuth } from '@/hooks/use-auth';
 
-interface UserTokens {
-  tokens_available: number;
-  tokens_used: number;
-}
-
-interface ProcessedFile {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  uploadDate: string;
-  status: 'uploaded' | 'processing' | 'processed';
-  summary?: string;
-  questions?: Array<{
-    question: string;
-    options: string[];
-    answer: string;
-    explanation: string;
-  }>;
-}
-
-const StudentHelpPage: React.FC = () => {
-  const { toast } = useToast();
+const StudyHelpPage: React.FC = () => {
   const navigate = useNavigate();
-  const [files, setFiles] = useState<ProcessedFile[]>([]);
-  const [question, setQuestion] = useState('');
-  const [user, setUser] = useState<any>(null);
-  const [userTokens, setUserTokens] = useState<UserTokens | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [processingFile, setProcessingFile] = useState<string | null>(null);
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
-    };
-    getUser();
-  }, []);
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<string>('upload');
+  const [file, setFile] = useState<File | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [aiSummaryType, setAiSummaryType] = useState<string>('summarize');
+  const [aiQuestion, setAiQuestion] = useState<string>('');
+  const [aiAnswer, setAiAnswer] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState<string | null>(null);
+  const [questionType, setQuestionType] = useState<string>('multiple-choice');
+  const [tokensUsed, setTokensUsed] = useState<number>(0);
+  const [tokensRemaining, setTokensRemaining] = useState<number>(0);
   
-  useEffect(() => {
-    const fetchUserTokens = async () => {
-      if (!user) return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
       
-      try {
-        const { data, error } = await supabase
-          .from('user_tokens')
-          .select('tokens_available, tokens_used')
-          .eq('user_id', user.id)
-          .single();
-          
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching tokens:', error);
-          return;
-        }
-        
-        setUserTokens(data || { tokens_available: 0, tokens_used: 0 });
-        
-      } catch (error) {
-        console.error('Error fetching user tokens:', error);
+      // Create a URL for preview if it's an image
+      if (selectedFile.type.startsWith('image/')) {
+        setFileUrl(URL.createObjectURL(selectedFile));
+      } else {
+        setFileUrl(null);
       }
-    };
-    
-    if (user) {
-      fetchUserTokens();
     }
-  }, [user]);
-
-  const handleFileUpload = (newFiles: File[]) => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to upload and process files",
-        variant: "destructive",
-      });
-      navigate('/signin');
-      return;
-    }
-    
-    const newUploadedFiles = newFiles.map(file => ({
-      id: Math.random().toString(36).substring(2, 9),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      uploadDate: new Date().toISOString(),
-      status: 'uploaded' as const
-    }));
-    
-    setFiles(prev => [...prev, ...newUploadedFiles]);
-    
-    toast({
-      title: "Files uploaded",
-      description: `${newFiles.length} file(s) uploaded successfully. Click 'Process' to analyze.`,
-    });
   };
   
-  const handleProcessFile = async (fileId: string) => {
-    const fileToProcess = files.find(f => f.id === fileId);
-    if (!fileToProcess) return;
-    
+  const handleUpload = async () => {
     if (!user) {
       toast({
-        title: "Authentication required",
-        description: "Please sign in to process files",
+        title: "Not authenticated",
+        description: "Please sign in first",
         variant: "destructive",
       });
-      navigate('/signin');
+      navigate("/signin");
       return;
     }
     
-    if (!userTokens || userTokens.tokens_available < 10) {
+    if (!file) {
       toast({
-        title: "Insufficient tokens",
-        description: "You need at least 10 tokens to process a file. Please purchase more tokens.",
+        title: "No file selected",
+        description: "Please select a file to upload",
         variant: "destructive",
       });
-      navigate('/student/tokens');
       return;
     }
+    
+    setIsUploading(true);
     
     try {
-      setProcessingFile(fileId);
+      // Upload file to Supabase storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `study_materials/${fileName}`;
       
-      // Update file status to processing
-      setFiles(prev => 
-        prev.map(f => 
-          f.id === fileId 
-            ? { ...f, status: 'processing' as const } 
-            : f
-        )
-      );
+      // Upload progress simulation
+      const interval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 95) {
+            clearInterval(interval);
+            return 95;
+          }
+          return prev + 5;
+        });
+      }, 100);
       
-      // Call the process-material Edge Function
+      const { error: storageError } = await supabase.storage
+        .from('study_materials')
+        .upload(filePath, file);
+      
+      if (storageError) {
+        throw new Error(storageError.message);
+      }
+      
+      // Get URL for the uploaded file
+      const { data: urlData } = supabase.storage
+        .from('study_materials')
+        .getPublicUrl(filePath);
+      
+      // Add record to the reading_materials table
+      const { error: dbError } = await supabase
+        .from('reading_materials')
+        .insert({
+          title: file.name,
+          description: 'Uploaded for AI analysis',
+          file_path: filePath,
+          content_type: file.type,
+          user_id: user.id,
+          is_public: false
+        });
+      
+      if (dbError) {
+        throw new Error(dbError.message);
+      }
+      
+      clearInterval(interval);
+      setUploadProgress(100);
+      
+      setTimeout(() => {
+        setIsUploading(false);
+        toast({
+          title: "File uploaded successfully",
+          description: "Your material is now being processed by our AI.",
+        });
+        setActiveTab('ai-analyze');
+      }, 500);
+    } catch (error: any) {
+      setIsUploading(false);
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleGenerateContent = async () => {
+    if (!user) {
+      toast({
+        title: "Not authenticated",
+        description: "Please sign in first",
+        variant: "destructive",
+      });
+      navigate("/signin");
+      return;
+    }
+    
+    if (!file) {
+      toast({
+        title: "No material available",
+        description: "Please upload a file first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsGenerating(true);
+    
+    try {
+      // Call the process-material edge function
       const { data, error } = await supabase.functions.invoke('process-material', {
-        body: { 
-          fileId,
-          fileName: fileToProcess.name
-        }
+        body: { fileId: file.name, fileName: file.name }
       });
       
-      if (error) throw error;
-      
-      if (data.error) {
-        if (data.tokensAvailable < data.tokensNeeded) {
+      if (error) {
+        if (error.message.includes("Not enough tokens")) {
           toast({
-            title: "Insufficient tokens",
-            description: `You need ${data.tokensNeeded} tokens to process this file, but you only have ${data.tokensAvailable} tokens available.`,
+            title: "Not enough tokens",
+            description: "You don't have enough tokens. Please purchase more tokens.",
             variant: "destructive",
           });
           navigate('/student/tokens');
           return;
         }
-        throw new Error(data.error);
+        throw new Error(error.message);
       }
       
-      // Update file status to processed and add generated content
-      setFiles(prev => 
-        prev.map(f => 
-          f.id === fileId 
-            ? { 
-                ...f, 
-                status: 'processed' as const,
-                summary: data.summary,
-                questions: data.questions
-              } 
-            : f
-        )
-      );
-      
-      // Update user tokens
-      setUserTokens(prev => prev ? {
-        tokens_available: prev.tokens_available - data.tokensUsed,
-        tokens_used: prev.tokens_used + data.tokensUsed
-      } : null);
-      
-      toast({
-        title: "Analysis Complete",
-        description: "Your material has been processed successfully.",
-      });
-      
+      if (data) {
+        setTokensUsed(data.tokensUsed);
+        setTokensRemaining(data.tokensRemaining);
+        
+        if (aiSummaryType === 'summarize') {
+          setGeneratedContent(data.summary);
+        } else if (aiSummaryType === 'expand') {
+          // For expansion, we would use a different property from the API response
+          // For now, we'll use the same summary data
+          setGeneratedContent(data.summary);
+        }
+        
+        toast({
+          title: "Content generated",
+          description: `AI has ${aiSummaryType === 'summarize' ? 'summarized' : 'expanded'} your material.`,
+        });
+      }
     } catch (error: any) {
       toast({
-        title: "Processing Error",
+        title: "Generation failed",
         description: error.message,
         variant: "destructive",
       });
-      
-      // Revert file status to uploaded
-      setFiles(prev => 
-        prev.map(f => 
-          f.id === fileId 
-            ? { ...f, status: 'uploaded' as const } 
-            : f
-        )
-      );
-      
     } finally {
-      setProcessingFile(null);
+      setIsGenerating(false);
     }
   };
   
-  const handleDeleteFile = (id: string) => {
-    setFiles(prev => prev.filter(file => file.id !== id));
-  };
-  
-  const handleQuestionSubmit = () => {
-    if (!question.trim()) return;
-    
+  const handleGenerateQuestions = async () => {
     if (!user) {
       toast({
-        title: "Authentication required",
-        description: "Please sign in to use the AI tutor",
+        title: "Not authenticated",
+        description: "Please sign in first",
         variant: "destructive",
       });
-      navigate('/signin');
+      navigate("/signin");
       return;
     }
     
-    if (!userTokens || userTokens.tokens_available < 5) {
+    if (!file) {
       toast({
-        title: "Insufficient tokens",
-        description: "You need at least 5 tokens to ask a question. Please purchase more tokens.",
+        title: "No material available",
+        description: "Please upload a file first",
         variant: "destructive",
       });
-      navigate('/student/tokens');
       return;
     }
     
-    toast({
-      title: "Question Submitted",
-      description: "Our AI tutor is working on an answer for you.",
-    });
+    setIsGenerating(true);
     
-    // Reset question
-    setQuestion('');
-    
-    // Simulate AI response
-    setTimeout(() => {
-      toast({
-        title: "Answer Ready",
-        description: "Check the AI Tutor tab for your response.",
+    try {
+      // Call the process-material edge function
+      const { data, error } = await supabase.functions.invoke('process-material', {
+        body: { fileId: file.name, fileName: file.name }
       });
       
-      // Update user tokens (simulate token usage)
-      setUserTokens(prev => prev ? {
-        tokens_available: prev.tokens_available - 5,
-        tokens_used: prev.tokens_used + 5
-      } : null);
+      if (error) {
+        if (error.message.includes("Not enough tokens")) {
+          toast({
+            title: "Not enough tokens",
+            description: "You don't have enough tokens. Please purchase more tokens.",
+            variant: "destructive",
+          });
+          navigate('/student/tokens');
+          return;
+        }
+        throw new Error(error.message);
+      }
       
-    }, 2000);
+      if (data) {
+        setTokensUsed(data.tokensUsed);
+        setTokensRemaining(data.tokensRemaining);
+        
+        // Format the questions based on questionType
+        let questionsHTML = '';
+        if (questionType === 'multiple-choice') {
+          questionsHTML = `
+            <h3 class="text-xl font-medium mb-4">Multiple Choice Questions</h3>
+            <div class="space-y-6">
+              ${data.questions.map((q: any, i: number) => `
+                <div class="border p-4 rounded-lg">
+                  <p class="font-medium mb-3">${i+1}. ${q.question}</p>
+                  <div class="space-y-2">
+                    ${q.options.map((opt: string, j: number) => `
+                      <div class="flex items-center">
+                        <span class="mr-2">${String.fromCharCode(65 + j)}.</span>
+                        <span>${opt}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <div class="mt-3 pt-3 border-t">
+                    <p class="font-medium">Answer: ${q.answer}</p>
+                    <p class="text-gray-700 mt-1">${q.explanation}</p>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        } else if (questionType === 'theory') {
+          questionsHTML = `
+            <h3 class="text-xl font-medium mb-4">Theory Questions</h3>
+            <div class="space-y-6">
+              ${data.questions.map((q: any, i: number) => `
+                <div class="border p-4 rounded-lg">
+                  <p class="font-medium mb-3">${i+1}. ${q.question}</p>
+                  <div class="mt-3 pt-3 border-t">
+                    <p class="font-medium">Model Answer:</p>
+                    <p class="text-gray-700 mt-1">${q.explanation}</p>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+        
+        setGeneratedContent(questionsHTML);
+        
+        toast({
+          title: "Questions generated",
+          description: `AI has created ${questionType} questions based on your material.`,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Question generation failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
+  const handleAskQuestion = async () => {
+    if (!user) {
+      toast({
+        title: "Not authenticated",
+        description: "Please sign in first",
+        variant: "destructive",
+      });
+      navigate("/signin");
+      return;
+    }
+    
+    if (!aiQuestion.trim()) {
+      toast({
+        title: "Empty question",
+        description: "Please enter a question to ask",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsGenerating(true);
+    
+    try {
+      // Call the process-material edge function with the question
+      const { data, error } = await supabase.functions.invoke('process-material', {
+        body: { fileId: file?.name, fileName: file?.name, question: aiQuestion }
+      });
+      
+      if (error) {
+        if (error.message.includes("Not enough tokens")) {
+          toast({
+            title: "Not enough tokens",
+            description: "You don't have enough tokens. Please purchase more tokens.",
+            variant: "destructive",
+          });
+          navigate('/student/tokens');
+          return;
+        }
+        throw new Error(error.message);
+      }
+      
+      if (data) {
+        setTokensUsed(data.tokensUsed);
+        setTokensRemaining(data.tokensRemaining);
+        setAiAnswer(data.summary || "I couldn't find an answer to your question in the provided material.");
+        
+        toast({
+          title: "Question answered",
+          description: "AI has responded to your question.",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Failed to get answer",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
+  const handleAddGeminiApiKey = () => {
+    toast({
+      title: "Add Gemini API Key",
+      description: "Please click the button below to add your Gemini API key.",
+      variant: "default",
+    });
+  };
+  
   return (
-    <div className="min-h-screen flex flex-col max-w-full overflow-x-hidden">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-grow w-full">
-        <div className="bg-primary text-white py-12 w-full">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="text-3xl md:text-4xl font-serif font-bold mb-4">Student Help Center</h1>
-            <p className="text-xl max-w-2xl mx-auto">
-              Upload your study materials for AI-powered analysis, summaries, and practice questions
+      <main className="flex-grow">
+        <div className="bg-primary text-white py-12">
+          <div className="container mx-auto px-4">
+            <h1 className="text-3xl md:text-4xl font-serif font-bold mb-4">Study Help</h1>
+            <p className="text-xl max-w-3xl">
+              Upload your textbooks, notes, or study materials and let our AI help you learn more effectively
             </p>
-            
-            {userTokens && (
-              <div className="mt-6 flex flex-wrap justify-center gap-4">
-                <div className="bg-white/10 py-2 px-4 rounded-full flex items-center">
-                  <Coins className="h-4 w-4 mr-2" />
-                  <span>{userTokens.tokens_available} tokens available</span>
-                </div>
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
-                  onClick={() => navigate('/student/tokens')}
-                >
-                  Get More Tokens
-                </Button>
-              </div>
-            )}
           </div>
         </div>
         
-        <div className="container mx-auto px-4 py-12">
-          <Tabs defaultValue="materials" className="w-full">
-            <div className="w-full overflow-x-auto scrollbar-hide">
-              <TabsList className="mb-8 w-auto inline-flex">
-                <TabsTrigger value="materials" className="flex-grow md:flex-grow-0">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Materials
-                </TabsTrigger>
-                <TabsTrigger value="summaries" className="flex-grow md:flex-grow-0">
-                  <BookText className="h-4 w-4 mr-2" />
-                  Summaries
-                </TabsTrigger>
-                <TabsTrigger value="practice" className="flex-grow md:flex-grow-0">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Practice Questions
-                </TabsTrigger>
-                <TabsTrigger value="tutor" className="flex-grow md:flex-grow-0">
-                  <GraduationCap className="h-4 w-4 mr-2" />
-                  AI Tutor
-                </TabsTrigger>
-              </TabsList>
+        <div className="container mx-auto px-4 py-8">
+          {tokensRemaining > 0 && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-medium">Token Balance: {tokensRemaining}</p>
+                <Button variant="outline" size="sm" onClick={() => navigate('/student/tokens')}>
+                  Buy More
+                </Button>
+              </div>
+              <p className="text-sm text-gray-600">Last processing used {tokensUsed} tokens</p>
             </div>
+          )}
+
+          <div className="mb-6">
+            <Button variant="outline" onClick={handleAddGeminiApiKey}>
+              Configure Gemini 2.0 Flash API Key
+            </Button>
+          </div>
+          
+          <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="mb-8 grid grid-cols-1 md:grid-cols-4 w-full">
+              <TabsTrigger value="upload" className="flex items-center">
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Materials
+              </TabsTrigger>
+              <TabsTrigger value="ai-analyze" className="flex items-center">
+                <BookOpen className="h-4 w-4 mr-2" />
+                AI Analysis
+              </TabsTrigger>
+              <TabsTrigger value="ai-questions" className="flex items-center">
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Generate Questions
+              </TabsTrigger>
+              <TabsTrigger value="ai-chat" className="flex items-center">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                AI Tutor Chat
+              </TabsTrigger>
+            </TabsList>
             
-            <TabsContent value="materials" className="space-y-8 overflow-x-hidden">
-              {!user && (
-                <Alert variant="warning" className="mb-6">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Authentication Required</AlertTitle>
-                  <AlertDescription>
-                    Please <Button variant="link" className="p-0 h-auto font-normal" onClick={() => navigate('/signin')}>sign in</Button> to upload and process materials.
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              {user && userTokens && userTokens.tokens_available < 10 && (
-                <Alert variant="warning" className="mb-6">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Low Token Balance</AlertTitle>
-                  <AlertDescription>
-                    You have {userTokens.tokens_available} tokens available. Processing materials requires at least 10 tokens.{' '}
-                    <Button variant="link" className="p-0 h-auto font-normal" onClick={() => navigate('/student/tokens')}>
-                      Purchase more tokens
-                    </Button>
-                  </AlertDescription>
-                </Alert>
-              )}
-              
+            <TabsContent value="upload">
               <Card>
                 <CardHeader>
-                  <CardTitle>Upload Study Materials</CardTitle>
+                  <CardTitle>Upload Your Study Materials</CardTitle>
                   <CardDescription>
-                    Upload textbooks, notes, slides or any study materials for AI analysis.
-                    Supported formats: PDF, DOC, DOCX, PPT, PPTX, TXT, JPG, PNG
+                    Upload textbooks, notes, or any study materials for AI analysis
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <FileUploader 
-                    onFilesSelected={handleFileUpload}
-                    maxSize={10485760} // 10 MB
-                    accept={{
-                      'application/pdf': ['.pdf'],
-                      'application/msword': ['.doc'],
-                      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-                      'application/vnd.ms-powerpoint': ['.ppt'],
-                      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
-                      'text/plain': ['.txt'],
-                      'image/jpeg': ['.jpg', '.jpeg'],
-                      'image/png': ['.png'],
-                    }}
-                  />
-                </CardContent>
-              </Card>
-              
-              {files.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Uploaded Materials</CardTitle>
-                    <CardDescription>
-                      Click "Process" to analyze your materials with AI
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {files.map(file => (
-                        <div key={file.id} className="flex items-center justify-between border rounded-lg p-3">
-                          <FileItem 
-                            file={file}
-                            onDelete={() => handleDeleteFile(file.id)} 
-                          />
-                          {file.status === 'uploaded' && (
-                            <Button 
-                              className="ml-4"
-                              onClick={() => handleProcessFile(file.id)}
-                              disabled={processingFile === file.id}
-                            >
-                              {processingFile === file.id ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Processing...
-                                </>
-                              ) : (
-                                'Process'
-                              )}
-                            </Button>
-                          )}
-                          {file.status === 'processing' && processingFile !== file.id && (
-                            <div className="ml-4 text-amber-500 font-medium flex items-center">
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Processing...
-                            </div>
-                          )}
-                          {file.status === 'processed' && (
-                            <div className="ml-4 text-green-600 font-medium flex items-center">
-                              <Check className="h-4 w-4 mr-1" />
-                              Processed
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="summaries" className="overflow-x-hidden">
-              {files.filter(file => file.status === 'processed' && file.summary).length > 0 ? (
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Generated Summaries</CardTitle>
-                      <CardDescription>
-                        AI-generated summaries of your uploaded materials
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-6">
-                        {files.filter(file => file.status === 'processed' && file.summary).map(file => (
-                          <Card key={file.id}>
-                            <CardHeader>
-                              <CardTitle className="text-lg font-medium">{file.name}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-gray-700 whitespace-pre-line">
-                                {file.summary}
-                              </p>
-                              <div className="mt-4 flex space-x-2">
-                                <Button>View Full Summary</Button>
-                                <Button variant="outline">Generate Flashcards</Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              ) : (
-                <Card className="p-8 text-center">
-                  <CardContent>
-                    <div className="flex flex-col items-center">
-                      <FileText className="h-16 w-16 text-gray-300 mb-4" />
-                      <h3 className="text-xl font-medium mb-2">No Summaries Available</h3>
-                      <p className="text-muted-foreground mb-6">
-                        Upload some study materials and process them to generate summaries
-                      </p>
-                      <Button variant="outline" onClick={() => document.querySelector('[data-value="materials"]')?.dispatchEvent(new Event('click'))}>
-                        Upload Materials
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="practice" className="overflow-x-hidden">
-              {files.filter(file => file.status === 'processed' && file.questions && file.questions.length > 0).length > 0 ? (
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Practice Questions</CardTitle>
-                      <CardDescription>
-                        AI-generated questions based on your study materials
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-6">
-                        {files.filter(file => file.status === 'processed' && file.questions && file.questions.length > 0).map(file => (
-                          <Card key={file.id}>
-                            <CardHeader>
-                              <CardTitle className="text-lg font-medium">{file.name}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-6">
-                                {file.questions?.map((q, i) => (
-                                  <div key={i} className="p-4 border rounded-lg">
-                                    <p className="font-medium mb-2">Question {i+1}: {q.question}</p>
-                                    <div className="space-y-1 ml-4 mb-3">
-                                      {q.options.map((option, j) => (
-                                        <div key={j} className="flex items-center space-x-2">
-                                          <div className={`w-5 h-5 flex items-center justify-center rounded-full border ${option === q.answer ? 'bg-primary text-white border-primary' : 'border-gray-400'}`}>
-                                            {String.fromCharCode(65 + j)}
-                                          </div>
-                                          <span>{option}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                    <div className="bg-gray-50 p-3 rounded-md">
-                                      <p className="font-medium">Explanation:</p>
-                                      <p className="text-gray-700">{q.explanation}</p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                              
-                              <div className="mt-4 flex space-x-2">
-                                <Button>Start Practice Quiz</Button>
-                                <Button variant="outline">Generate More Questions</Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              ) : (
-                <Card className="p-8 text-center">
-                  <CardContent>
-                    <div className="flex flex-col items-center">
-                      <FileText className="h-16 w-16 text-gray-300 mb-4" />
-                      <h3 className="text-xl font-medium mb-2">No Practice Questions Available</h3>
-                      <p className="text-muted-foreground mb-6">
-                        Upload and process study materials to generate practice questions
-                      </p>
-                      <Button variant="outline" onClick={() => document.querySelector('[data-value="materials"]')?.dispatchEvent(new Event('click'))}>
-                        Upload Materials
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="tutor" className="overflow-x-hidden">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2">
-                  <Card className="h-full">
-                    <CardHeader>
-                      <CardTitle>AI Tutor Chat</CardTitle>
-                      <CardDescription>
-                        Ask questions about your courses or uploaded materials
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[500px] flex flex-col">
-                      <div className="flex-grow bg-gray-50 rounded-md p-4 mb-4 overflow-y-auto">
-                        <div className="flex items-start mb-4">
-                          <Avatar className="mr-2">
-                            <AvatarImage src="/placeholder.svg" />
-                            <AvatarFallback>AI</AvatarFallback>
-                          </Avatar>
-                          <div className="bg-white p-3 rounded-lg shadow-sm">
-                            <p>Hello! I'm your AI tutor. Ask me anything about your courses or uploaded materials.</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Textarea 
-                          placeholder="Type your question here..." 
-                          className="flex-grow"
-                          value={question}
-                          onChange={(e) => setQuestion(e.target.value)}
-                        />
-                        <Button onClick={handleQuestionSubmit}>
-                          Send{userTokens && <span className="ml-2 text-xs opacity-75">(-5 tokens)</span>}
-                        </Button>
-                      </div>
-                      {userTokens && userTokens.tokens_available < 5 && (
-                        <p className="text-red-500 text-sm mt-2">
-                          You don't have enough tokens to ask questions. 
-                          <Button variant="link" className="p-0 h-auto text-sm" onClick={() => navigate('/student/tokens')}>
-                            Purchase more tokens
-                          </Button>
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <div>
-                  <Card className="h-full">
-                    <CardHeader>
-                      <CardTitle>Learning Resources</CardTitle>
-                      <CardDescription>
-                        Helpful resources based on your materials
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {files.filter(file => file.status === 'processed').length > 0 ? (
+                  <div className="space-y-6">
+                    <div className="border-2 border-dashed rounded-lg p-12 text-center bg-muted/30">
+                      {fileUrl ? (
                         <div className="space-y-4">
-                          {files.filter(file => file.status === 'processed').map(file => (
-                            <div key={file.id} className="flex items-center space-x-3">
-                              {file.type.includes('image') ? 
-                                <FileImage className="h-5 w-5 text-blue-500" /> :
-                                file.type.includes('video') ?
-                                  <FileVideo className="h-5 w-5 text-red-500" /> :
-                                  <FileText className="h-5 w-5 text-green-500" />
-                              }
-                              <div>
-                                <p className="text-sm font-medium">{file.name}</p>
-                                <p className="text-xs text-muted-foreground">Processed on {new Date(file.uploadDate).toLocaleDateString()}</p>
-                              </div>
+                          {file?.type.startsWith('image/') ? (
+                            <img 
+                              src={fileUrl} 
+                              alt="Preview" 
+                              className="max-h-64 mx-auto rounded"
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center">
+                              <File className="h-16 w-16 text-primary" />
                             </div>
-                          ))}
-                          <Button className="w-full mt-4" variant="outline">
-                            Generate Study Guide
-                          </Button>
+                          )}
+                          <p>{file?.name}</p>
+                          <p className="text-sm text-gray-500">{(file?.size ? (file.size / 1024 / 1024).toFixed(2) : 0)} MB</p>
                         </div>
                       ) : (
-                        <div className="text-center py-6">
-                          <p className="text-muted-foreground text-sm">
-                            Upload materials to get personalized resources
+                        <>
+                          <FileUp className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                          <p className="text-lg">Drag and drop your files here, or click to browse</p>
+                          <p className="text-sm text-gray-500 mt-2">
+                            Supports PDF, DOCX, TXT, JPG, PNG files (Max 50MB)
                           </p>
-                        </div>
+                        </>
                       )}
-                      
-                      {userTokens && (
-                        <div className="mt-6 p-4 rounded-md bg-gray-50">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm">Available Tokens:</span>
-                            <span className="font-medium">{userTokens.tokens_available}</span>
+                      <Input
+                        type="file"
+                        className="hidden"
+                        id="file-upload"
+                        onChange={handleFileChange}
+                        accept=".pdf,.docx,.txt,.jpg,.jpeg,.png"
+                      />
+                      <div className="mt-6">
+                        <Label htmlFor="file-upload" asChild>
+                          <Button variant="outline" className="mr-4">
+                            <FilePlus className="h-4 w-4 mr-2" />
+                            Browse Files
+                          </Button>
+                        </Label>
+                        {file && (
+                          <Button variant="ghost" onClick={() => {
+                            setFile(null);
+                            setFileUrl(null);
+                          }}>
+                            Remove File
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {isUploading && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Uploading...</span>
+                          <span className="text-sm">{uploadProgress}%</span>
+                        </div>
+                        <Progress value={uploadProgress} />
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={handleUpload}
+                        disabled={!file || isUploading}
+                        className="w-full sm:w-auto"
+                      >
+                        {isUploading ? "Uploading..." : "Upload Material"}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="ai-analyze">
+              <Card>
+                <CardHeader>
+                  <CardTitle>AI Material Analysis</CardTitle>
+                  <CardDescription>
+                    Our AI will analyze your material and generate summaries or expanded explanations
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {file ? (
+                      <>
+                        <div className="flex items-center space-x-2 p-4 bg-muted/30 rounded-lg">
+                          <File className="h-8 w-8 text-primary" />
+                          <div>
+                            <p className="font-medium">{file.name}</p>
+                            <p className="text-sm text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                           </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="w-full"
-                            onClick={() => navigate('/student/tokens')}
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-medium">Analysis Options</h3>
+                          <RadioGroup 
+                            value={aiSummaryType} 
+                            onValueChange={setAiSummaryType}
+                            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                           >
-                            <Coins className="h-4 w-4 mr-2" />
-                            Manage Tokens
+                            <div className="border rounded-lg p-4 cursor-pointer hover:border-primary">
+                              <div className="flex items-start space-x-2">
+                                <RadioGroupItem value="summarize" id="summarize" />
+                                <div>
+                                  <Label htmlFor="summarize" className="font-medium cursor-pointer">Summarize Material</Label>
+                                  <p className="text-sm text-gray-500">
+                                    Create a concise summary of key points and concepts
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="border rounded-lg p-4 cursor-pointer hover:border-primary">
+                              <div className="flex items-start space-x-2">
+                                <RadioGroupItem value="expand" id="expand" />
+                                <div>
+                                  <Label htmlFor="expand" className="font-medium cursor-pointer">Expand Content</Label>
+                                  <p className="text-sm text-gray-500">
+                                    Add additional details, examples and explanations
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </RadioGroup>
+                          
+                          <Button 
+                            onClick={handleGenerateContent}
+                            disabled={isGenerating}
+                            className="w-full"
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Clock className="mr-2 h-4 w-4 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              `Generate ${aiSummaryType === 'summarize' ? 'Summary' : 'Expanded Content'}`
+                            )}
                           </Button>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+                        
+                        {generatedContent && (
+                          <div className="mt-6">
+                            <h3 className="text-xl font-medium mb-4">
+                              {aiSummaryType === 'summarize' ? 'Material Summary' : 'Expanded Content'}
+                            </h3>
+                            <div className="p-6 bg-muted/20 rounded-lg">
+                              <p className="whitespace-pre-line">{generatedContent}</p>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-12">
+                        <BookOpen className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                        <h3 className="text-xl font-medium mb-2">No Material Available</h3>
+                        <p className="text-gray-600 mb-6">
+                          Please upload your study material first to use the AI analysis features
+                        </p>
+                        <Button onClick={() => setActiveTab('upload')}>
+                          Upload Material
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="ai-questions">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Generate Practice Questions</CardTitle>
+                  <CardDescription>
+                    Our AI will create custom practice questions based on your uploaded material
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {file ? (
+                      <>
+                        <div className="flex items-center space-x-2 p-4 bg-muted/30 rounded-lg">
+                          <File className="h-8 w-8 text-primary" />
+                          <div>
+                            <p className="font-medium">{file.name}</p>
+                            <p className="text-sm text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-medium">Question Type</h3>
+                          <RadioGroup 
+                            value={questionType} 
+                            onValueChange={setQuestionType}
+                            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                          >
+                            <div className="border rounded-lg p-4 cursor-pointer hover:border-primary">
+                              <div className="flex items-start space-x-2">
+                                <RadioGroupItem value="multiple-choice" id="multiple-choice" />
+                                <div>
+                                  <Label htmlFor="multiple-choice" className="font-medium cursor-pointer">Multiple Choice</Label>
+                                  <p className="text-sm text-gray-500">
+                                    Generate questions with multiple answer options
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="border rounded-lg p-4 cursor-pointer hover:border-primary">
+                              <div className="flex items-start space-x-2">
+                                <RadioGroupItem value="theory" id="theory" />
+                                <div>
+                                  <Label htmlFor="theory" className="font-medium cursor-pointer">Theory Questions</Label>
+                                  <p className="text-sm text-gray-500">
+                                    Create essay-style questions with model answers
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </RadioGroup>
+                          
+                          <Button 
+                            onClick={handleGenerateQuestions}
+                            disabled={isGenerating}
+                            className="w-full"
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Clock className="mr-2 h-4 w-4 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              `Generate ${questionType === 'multiple-choice' ? 'Multiple Choice' : 'Theory'} Questions`
+                            )}
+                          </Button>
+                        </div>
+                        
+                        {generatedContent && (
+                          <div className="mt-6">
+                            <div className="p-6 bg-muted/20 rounded-lg">
+                              <div dangerouslySetInnerHTML={{ __html: generatedContent }} />
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-12">
+                        <HelpCircle className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                        <h3 className="text-xl font-medium mb-2">No Material Available</h3>
+                        <p className="text-gray-600 mb-6">
+                          Please upload your study material first to generate practice questions
+                        </p>
+                        <Button onClick={() => setActiveTab('upload')}>
+                          Upload Material
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="ai-chat">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Chat with AI Tutor</CardTitle>
+                  <CardDescription>
+                    Ask questions about your study materials and get immediate answers
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {file ? (
+                      <>
+                        <div className="flex items-center space-x-2 p-4 bg-muted/30 rounded-lg">
+                          <File className="h-8 w-8 text-primary" />
+                          <div>
+                            <p className="font-medium">{file.name}</p>
+                            <p className="text-sm text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-muted/20 rounded-lg p-4 h-[300px] overflow-y-auto">
+                          <div className="space-y-4">
+                            <div className="flex items-start">
+                              <div className="bg-primary/10 rounded-lg p-3 max-w-[75%]">
+                                <p className="text-sm font-medium">AI Tutor</p>
+                                <p>Hello! I've analyzed your material. What questions do you have about the topics covered in the material?</p>
+                              </div>
+                            </div>
+                            
+                            {aiAnswer && (
+                              <>
+                                <div className="flex items-start justify-end">
+                                  <div className="bg-primary text-white rounded-lg p-3 max-w-[75%]">
+                                    <p className="text-sm font-medium">You</p>
+                                    <p>{aiQuestion}</p>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-start">
+                                  <div className="bg-primary/10 rounded-lg p-3 max-w-[75%]">
+                                    <p className="text-sm font-medium">AI Tutor</p>
+                                    <p className="whitespace-pre-line">{aiAnswer}</p>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <Textarea
+                            placeholder="Ask a question about your material..."
+                            value={aiQuestion}
+                            onChange={(e) => setAiQuestion(e.target.value)}
+                            className="min-h-[100px] resize-none"
+                          />
+                          
+                          <Button 
+                            onClick={handleAskQuestion}
+                            disabled={isGenerating || !aiQuestion.trim()}
+                            className="w-full"
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Clock className="mr-2 h-4 w-4 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              "Ask Question"
+                            )}
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-12">
+                        <MessageSquare className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                        <h3 className="text-xl font-medium mb-2">No Material Available</h3>
+                        <p className="text-gray-600 mb-6">
+                          Please upload your study material first to chat with the AI tutor
+                        </p>
+                        <Button onClick={() => setActiveTab('upload')}>
+                          Upload Material
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
@@ -651,19 +802,4 @@ const StudentHelpPage: React.FC = () => {
   );
 };
 
-const Check = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M20 6 9 17l-5-5" />
-  </svg>
-);
-
-export default StudentHelpPage;
+export default StudyHelpPage;

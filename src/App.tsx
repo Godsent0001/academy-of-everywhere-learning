@@ -24,6 +24,7 @@ import TokensPage from "./pages/student/TokensPage";
 import PaymentSuccessPage from "./pages/student/PaymentSuccessPage";
 import PaymentCanceledPage from "./pages/student/PaymentCanceledPage";
 import StudyGroupPage from "./pages/student/StudyGroupPage";
+import Profile from "./pages/Profile";
 
 // Create the query client
 const queryClient = new QueryClient();
@@ -65,6 +66,7 @@ const App = () => (
           <Route path="/payment-success" element={<PaymentSuccessPage />} />
           <Route path="/payment-canceled" element={<PaymentCanceledPage />} />
           <Route path="/study-group/:id" element={<StudyGroupPage />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>

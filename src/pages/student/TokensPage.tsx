@@ -4,446 +4,480 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Coins, CreditCard, Loader2, ArrowRight, Clock } from 'lucide-react';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
-
-interface TokenData {
-  id: string;
-  user_id: string;
-  tokens_available: number;
-  tokens_used: number;
-  last_updated: string;
-}
-
-interface TokenTransaction {
-  id: string;
-  user_id: string;
-  amount: number;
-  transaction_type: 'purchase' | 'usage';
-  description: string | null;
-  created_at: string;
-}
+import { useAuth } from '@/hooks/use-auth';
+import { TokenTransaction, UserTokens } from '@/types';
+import { 
+  CircleUser, 
+  CreditCard, 
+  DollarSign, 
+  TrendingUp, 
+  TrendingDown, 
+  GraduationCap,
+  FileText
+} from 'lucide-react';
+import { format } from 'date-fns';
 
 const TokensPage: React.FC = () => {
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const [tokenData, setTokenData] = useState<TokenData | null>(null);
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [tokens, setTokens] = useState<UserTokens | null>(null);
   const [transactions, setTransactions] = useState<TokenTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [purchasingTokens, setPurchasingTokens] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPurchasing, setIsPurchasing] = useState(false);
   
   useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
-    };
-    getUser();
-  }, []);
+    if (user) {
+      fetchTokens();
+      fetchTransactions();
+    } else {
+      navigate('/signin');
+    }
+  }, [user, navigate]);
 
-  useEffect(() => {
-    const fetchTokenData = async () => {
-      if (!user) return;
-      
-      try {
-        setLoading(true);
+  const fetchTokens = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_tokens')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
         
-        // Fetch token data
-        const { data: tokenData, error: tokenError } = await supabase
-          .from('user_tokens')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (tokenError && tokenError.code !== 'PGRST116') {
-          throw tokenError;
-        }
-        
-        setTokenData(tokenData || null);
-        
-        // Fetch token transactions
-        const { data: transactionsData, error: transactionsError } = await supabase
-          .from('token_transactions')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (transactionsError) throw transactionsError;
-        
-        setTransactions(transactionsData || []);
-        
-      } catch (error: any) {
-        toast({
-          title: "Error fetching token data",
-          description: error.message,
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error('Error fetching tokens:', error);
+        return;
       }
+      
+      setTokens(data);
+    } catch (error) {
+      console.error('Error fetching tokens:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchTransactions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('token_transactions')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        return;
+      }
+      
+      setTransactions(data as TokenTransaction[]);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    }
+  };
+
+  const handlePurchaseTokens = async (packageId: string) => {
+    if (!user) {
+      navigate('/signin');
+      return;
+    }
+
+    const tokenPackages = {
+      'basic': { tokens: 100, price: 999 },
+      'standard': { tokens: 500, price: 3999 },
+      'premium': { tokens: 1000, price: 6999 },
     };
     
-    if (user) {
-      fetchTokenData();
-    }
-  }, [user, toast]);
-
-  const handlePurchaseTokens = async (priceId: string) => {
-    if (!user) {
+    const selectedPackage = tokenPackages[packageId as keyof typeof tokenPackages];
+    
+    if (!selectedPackage) {
       toast({
-        title: "Authentication required",
-        description: "Please sign in to purchase tokens",
-        variant: "destructive",
+        title: 'Invalid package',
+        description: 'Please select a valid token package',
+        variant: 'destructive',
       });
-      navigate('/signin');
       return;
     }
     
     try {
-      setPurchasingTokens(priceId);
+      setIsPurchasing(true);
       
-      // Call the create-checkout Edge Function
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId }
+        body: {
+          packageId,
+          tokens: selectedPackage.tokens,
+          price: selectedPackage.price
+        }
       });
       
-      if (error) throw error;
-      
-      // Redirect to Stripe checkout
-      if (data.url) {
-        window.location.href = data.url;
+      if (error) {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to process payment',
+          variant: 'destructive',
+        });
+        return;
       }
       
+      if (data?.url) {
+        window.location.href = data.url;
+      }
     } catch (error: any) {
       toast({
-        title: "Error creating checkout session",
-        description: error.message,
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'Failed to process payment',
+        variant: 'destructive',
       });
-      setPurchasingTokens(null);
+    } finally {
+      setIsPurchasing(false);
     }
   };
-  
-  const tokenPackages = [
-    {
-      id: "price_basic",
-      name: "Basic",
-      tokens: 100,
-      price: "$4.99",
-      features: [
-        "Process up to 10 documents",
-        "Generate summary notes",
-        "Create basic practice questions"
-      ],
-      popular: false
-    },
-    {
-      id: "price_standard",
-      name: "Standard",
-      tokens: 500,
-      price: "$19.99",
-      features: [
-        "Process up to 50 documents",
-        "Generate detailed summaries",
-        "Create advanced practice questions",
-        "Access to AI tutoring"
-      ],
-      popular: true
-    },
-    {
-      id: "price_premium",
-      name: "Premium",
-      tokens: 1000,
-      price: "$34.99",
-      features: [
-        "Process unlimited documents",
-        "Generate comprehensive study guides",
-        "Create custom exam simulations",
-        "Premium AI tutoring support",
-        "Priority processing"
-      ],
-      popular: false
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return format(date, 'MMM dd, yyyy HH:mm');
+  };
+
+  // Get transaction badge color
+  const getTransactionBadge = (type: string) => {
+    if (type === 'purchase') {
+      return <Badge className="bg-green-500 hover:bg-green-600">Purchase</Badge>;
     }
-  ];
+    return <Badge className="bg-blue-500 hover:bg-blue-600">Usage</Badge>;
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-r from-primary/90 to-primary text-white py-8">
+        <div className="bg-primary text-white py-12">
           <div className="container mx-auto px-4">
-            <div className="max-w-3xl">
-              <h1 className="text-2xl md:text-3xl font-serif font-bold mb-2">Token Management</h1>
-              <p className="opacity-90">
-                Manage your tokens for AI-powered study material processing
-              </p>
+            <div className="flex items-center gap-3">
+              <GraduationCap className="h-8 w-8" />
+              <h1 className="text-3xl md:text-4xl font-serif font-bold">Token Management</h1>
             </div>
+            <p className="text-xl max-w-3xl mt-4">
+              Manage your tokens and purchase more to continue using AI-powered study tools
+            </p>
           </div>
         </div>
         
-        {/* Main Content */}
         <div className="container mx-auto px-4 py-8">
-          {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-1">
-                {/* Token Status Card */}
-                <Card className="mb-8">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Coins className="h-5 w-5 mr-2 text-primary" />
-                      Your Tokens
-                    </CardTitle>
-                    <CardDescription>
-                      Current token balance and usage
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {tokenData ? (
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm font-medium mb-1">Available Tokens</p>
-                          <p className="text-3xl font-bold text-primary">{tokenData.tokens_available}</p>
-                        </div>
-                        <div>
-                          <div className="flex justify-between mb-1">
-                            <p className="text-sm font-medium">Usage</p>
+          <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="mb-8 grid grid-cols-1 md:grid-cols-3 w-full">
+              <TabsTrigger value="overview" className="flex items-center">
+                <CircleUser className="h-4 w-4 mr-2" />
+                Token Overview
+              </TabsTrigger>
+              <TabsTrigger value="purchase" className="flex items-center">
+                <CreditCard className="h-4 w-4 mr-2" />
+                Purchase Tokens
+              </TabsTrigger>
+              <TabsTrigger value="history" className="flex items-center">
+                <FileText className="h-4 w-4 mr-2" />
+                Transaction History
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="overview">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Token Balance</CardTitle>
+                  <CardDescription>
+                    View your current token balance and usage statistics
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="text-center py-10">
+                      <p>Loading token information...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Card className="shadow-md">
+                          <CardHeader className="pb-0">
+                            <CardDescription>Available Tokens</CardDescription>
+                            <div className="flex items-end justify-between">
+                              <CardTitle className="text-4xl font-semibold text-green-600">
+                                {tokens?.tokens_available || 0}
+                              </CardTitle>
+                              <TrendingUp className="h-8 w-8 text-green-600" />
+                            </div>
+                          </CardHeader>
+                          <CardContent>
                             <p className="text-sm text-gray-500">
-                              {tokenData.tokens_used} used
+                              Use tokens for AI-powered study help, note analysis, and practice question generation
                             </p>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card className="shadow-md">
+                          <CardHeader className="pb-0">
+                            <CardDescription>Used Tokens</CardDescription>
+                            <div className="flex items-end justify-between">
+                              <CardTitle className="text-4xl font-semibold text-blue-600">
+                                {tokens?.tokens_used || 0}
+                              </CardTitle>
+                              <TrendingDown className="h-8 w-8 text-blue-600" />
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-sm text-gray-500">
+                              Total tokens used across all your learning activities
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      
+                      <div className="mt-6">
+                        <h3 className="text-lg font-medium mb-4">Token Usage Guide</h3>
+                        <div className="space-y-4">
+                          <div className="flex items-start gap-4 p-4 border rounded-lg">
+                            <div>
+                              <h4 className="font-medium">Study Material Analysis</h4>
+                              <p className="text-sm text-gray-500">10-30 tokens per document (depending on length)</p>
+                            </div>
                           </div>
-                          <Progress 
-                            value={
-                              tokenData.tokens_used + tokenData.tokens_available > 0 
-                                ? (tokenData.tokens_used / (tokenData.tokens_used + tokenData.tokens_available)) * 100 
-                                : 0
-                            } 
-                          />
-                        </div>
-                        <div className="text-sm text-gray-500 pt-2">
-                          Last updated: {new Date(tokenData.last_updated).toLocaleString()}
+                          <div className="flex items-start gap-4 p-4 border rounded-lg">
+                            <div>
+                              <h4 className="font-medium">Practice Question Generation</h4>
+                              <p className="text-sm text-gray-500">5-15 tokens per question set</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-4 p-4 border rounded-lg">
+                            <div>
+                              <h4 className="font-medium">AI Chat Assistance</h4>
+                              <p className="text-sm text-gray-500">2-5 tokens per message exchange</p>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    ) : (
-                      <div className="text-center py-6">
-                        <p className="text-lg font-medium mb-2">No tokens yet</p>
-                        <p className="text-sm text-gray-500 mb-4">
-                          Purchase tokens to use our AI-powered study tools
-                        </p>
-                        <Button onClick={() => handlePurchaseTokens("price_basic")}>
-                          Purchase Tokens
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                {/* Recent Transactions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Clock className="h-5 w-5 mr-2 text-primary" />
-                      Recent Transactions
-                    </CardTitle>
-                    <CardDescription>
-                      Your token purchase and usage history
-                    </CardDescription>
-                  </CardHeader>
-                  <ScrollArea className="h-[300px]">
-                    <CardContent>
-                      {transactions.length > 0 ? (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Type</TableHead>
-                              <TableHead className="text-right">Amount</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {transactions.map((transaction) => (
-                              <TableRow key={transaction.id}>
-                                <TableCell className="font-medium">
-                                  {new Date(transaction.created_at).toLocaleDateString()}
-                                </TableCell>
-                                <TableCell>
-                                  <span className={
-                                    transaction.transaction_type === 'purchase' 
-                                      ? 'text-green-600' 
-                                      : 'text-orange-600'
-                                  }>
-                                    {transaction.transaction_type === 'purchase' ? 'Purchase' : 'Usage'}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  {transaction.transaction_type === 'purchase' ? '+' : '-'}{transaction.amount}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      ) : (
-                        <div className="text-center py-6">
-                          <p className="text-gray-500">No transactions yet</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </ScrollArea>
-                </Card>
-              </div>
-              
-              <div className="lg:col-span-2">
-                <h2 className="text-2xl font-serif font-bold mb-6">Purchase Tokens</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {tokenPackages.map((pkg) => (
-                    <Card key={pkg.id} className={`overflow-hidden ${pkg.popular ? 'border-primary shadow-md' : ''}`}>
-                      {pkg.popular && (
-                        <div className="bg-primary text-white text-center py-1 text-sm font-medium">
-                          Most Popular
-                        </div>
-                      )}
-                      <CardHeader className={pkg.popular ? 'pb-2' : ''}>
-                        <CardTitle>{pkg.name}</CardTitle>
-                        <CardDescription>
-                          {pkg.tokens} tokens
-                        </CardDescription>
+                    </>
+                  )}
+                </CardContent>
+                <CardFooter>
+                  <Button onClick={() => setActiveTab('purchase')} className="w-full">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Purchase More Tokens
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="purchase">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Purchase Tokens</CardTitle>
+                  <CardDescription>
+                    Select a token package to enhance your learning experience
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card className="shadow-md border-2 border-transparent hover:border-primary transition-all">
+                      <CardHeader>
+                        <CardTitle>Basic Package</CardTitle>
+                        <CardDescription>Perfect for getting started</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-3xl font-bold mb-4">{pkg.price}</p>
-                        <ul className="space-y-2 mb-4">
-                          {pkg.features.map((feature, index) => (
-                            <li key={index} className="text-sm flex items-start">
-                              <Check className="h-4 w-4 text-primary mr-2 mt-0.5" />
-                              {feature}
-                            </li>
-                          ))}
+                        <div className="text-3xl font-bold mb-2">
+                          <div className="flex items-center">
+                            <DollarSign className="h-5 w-5" />
+                            <span>9.99</span>
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-500 mb-4">One-time payment</div>
+                        <Separator className="my-4" />
+                        <ul className="space-y-2">
+                          <li className="flex items-center">
+                            <span className="mr-2">✓</span>
+                            <span>100 Tokens</span>
+                          </li>
+                          <li className="flex items-center">
+                            <span className="mr-2">✓</span>
+                            <span>Document analysis</span>
+                          </li>
+                          <li className="flex items-center">
+                            <span className="mr-2">✓</span>
+                            <span>Question generation</span>
+                          </li>
                         </ul>
                       </CardContent>
                       <CardFooter>
                         <Button 
                           className="w-full" 
-                          onClick={() => handlePurchaseTokens(pkg.id)}
-                          disabled={purchasingTokens === pkg.id}
-                          variant={pkg.popular ? "default" : "outline"}
+                          onClick={() => handlePurchaseTokens('basic')}
+                          disabled={isPurchasing}
                         >
-                          {purchasingTokens === pkg.id ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Processing...
-                            </>
-                          ) : (
-                            <>
-                              <CreditCard className="mr-2 h-4 w-4" />
-                              Buy Now
-                            </>
-                          )}
+                          {isPurchasing ? 'Processing...' : 'Purchase'}
                         </Button>
                       </CardFooter>
                     </Card>
-                  ))}
-                </div>
-                
-                <div className="mt-10 bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-medium mb-4">How Tokens Work</h3>
-                  <div className="space-y-4">
-                    <div className="flex">
-                      <div className="bg-primary/10 p-2 rounded-full mr-3 mt-1">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Document Processing</h4>
-                        <p className="text-sm text-gray-600">Each document processed by our AI costs 10-20 tokens depending on length and complexity.</p>
-                      </div>
-                    </div>
-                    <div className="flex">
-                      <div className="bg-primary/10 p-2 rounded-full mr-3 mt-1">
-                        <MessageSquare className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">AI Tutor Questions</h4>
-                        <p className="text-sm text-gray-600">Each question to the AI tutor costs 1-5 tokens depending on the complexity of the answer.</p>
-                      </div>
-                    </div>
-                    <div className="flex">
-                      <div className="bg-primary/10 p-2 rounded-full mr-3 mt-1">
-                        <GraduationCap className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Quiz Generation</h4>
-                        <p className="text-sm text-gray-600">Generating a set of practice questions costs 5-15 tokens depending on the number of questions.</p>
-                      </div>
-                    </div>
+                    
+                    <Card className="shadow-md border-2 border-primary">
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle>Standard Package</CardTitle>
+                            <CardDescription>Most popular choice</CardDescription>
+                          </div>
+                          <Badge>Best Value</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-3xl font-bold mb-2">
+                          <div className="flex items-center">
+                            <DollarSign className="h-5 w-5" />
+                            <span>39.99</span>
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-500 mb-4">One-time payment</div>
+                        <Separator className="my-4" />
+                        <ul className="space-y-2">
+                          <li className="flex items-center">
+                            <span className="mr-2">✓</span>
+                            <span>500 Tokens</span>
+                          </li>
+                          <li className="flex items-center">
+                            <span className="mr-2">✓</span>
+                            <span>Document analysis</span>
+                          </li>
+                          <li className="flex items-center">
+                            <span className="mr-2">✓</span>
+                            <span>Question generation</span>
+                          </li>
+                          <li className="flex items-center">
+                            <span className="mr-2">✓</span>
+                            <span>Study material summaries</span>
+                          </li>
+                        </ul>
+                      </CardContent>
+                      <CardFooter>
+                        <Button 
+                          className="w-full" 
+                          onClick={() => handlePurchaseTokens('standard')}
+                          disabled={isPurchasing}
+                        >
+                          {isPurchasing ? 'Processing...' : 'Purchase'}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                    
+                    <Card className="shadow-md border-2 border-transparent hover:border-primary transition-all">
+                      <CardHeader>
+                        <CardTitle>Premium Package</CardTitle>
+                        <CardDescription>For serious learners</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-3xl font-bold mb-2">
+                          <div className="flex items-center">
+                            <DollarSign className="h-5 w-5" />
+                            <span>69.99</span>
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-500 mb-4">One-time payment</div>
+                        <Separator className="my-4" />
+                        <ul className="space-y-2">
+                          <li className="flex items-center">
+                            <span className="mr-2">✓</span>
+                            <span>1,000 Tokens</span>
+                          </li>
+                          <li className="flex items-center">
+                            <span className="mr-2">✓</span>
+                            <span>Document analysis</span>
+                          </li>
+                          <li className="flex items-center">
+                            <span className="mr-2">✓</span>
+                            <span>Question generation</span>
+                          </li>
+                          <li className="flex items-center">
+                            <span className="mr-2">✓</span>
+                            <span>Study material summaries</span>
+                          </li>
+                          <li className="flex items-center">
+                            <span className="mr-2">✓</span>
+                            <span>Advanced AI tutoring</span>
+                          </li>
+                        </ul>
+                      </CardContent>
+                      <CardFooter>
+                        <Button 
+                          className="w-full" 
+                          onClick={() => handlePurchaseTokens('premium')}
+                          disabled={isPurchasing}
+                        >
+                          {isPurchasing ? 'Processing...' : 'Purchase'}
+                        </Button>
+                      </CardFooter>
+                    </Card>
                   </div>
-                  <div className="mt-6 bg-blue-50 rounded-md p-4">
-                    <p className="text-sm text-blue-800">
-                      <strong>New users get 100 tokens free!</strong> Try out our AI-powered study tools with your free tokens before purchasing more.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+                </CardContent>
+                <CardFooter className="flex flex-col">
+                  <p className="text-sm text-gray-500 mb-4">
+                    All purchases are processed securely through Stripe. Tokens are non-refundable and do not expire.
+                  </p>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="history">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Transaction History</CardTitle>
+                  <CardDescription>
+                    View your token purchase and usage history
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {transactions.length === 0 ? (
+                    <div className="text-center py-10 bg-muted/30 rounded-lg">
+                      <p>No transactions found</p>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Purchase tokens or use the study tools to see your transaction history
+                      </p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Description</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {transactions.map((transaction) => (
+                          <TableRow key={transaction.id}>
+                            <TableCell>{formatDate(transaction.created_at)}</TableCell>
+                            <TableCell>{getTransactionBadge(transaction.transaction_type)}</TableCell>
+                            <TableCell className={transaction.transaction_type === 'purchase' ? 'text-green-600' : 'text-blue-600'}>
+                              {transaction.transaction_type === 'purchase' ? '+' : '-'}
+                              {transaction.amount} tokens
+                            </TableCell>
+                            <TableCell>{transaction.description}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
       <Footer />
     </div>
   );
 };
-
-const Check = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M20 6 9 17l-5-5" />
-  </svg>
-);
-
-const MessageSquare = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-  </svg>
-);
-
-const GraduationCap = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-    <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
-  </svg>
-);
 
 export default TokensPage;
