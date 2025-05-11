@@ -25,7 +25,7 @@ export interface Course {
   lessons: Lesson[];
   duration: string;
   modules?: string[];
-  level?: string;
+  difficulty: string;  // Changed from optional level to required difficulty
   rating?: number;
   reviews?: number;
   instructor?: string;
@@ -49,8 +49,10 @@ export interface Question {
   type: 'multiple-choice' | 'true-false' | 'open-ended';
   options?: string[];
   answer?: string;
+  // Removed lessonId as it's not defined in the type
 }
 
+// Define exam types
 export interface Exam {
   id: string;
   title: string;

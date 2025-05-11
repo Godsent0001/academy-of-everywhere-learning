@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from '@/hooks/use-toast';
 
@@ -13,6 +12,14 @@ interface LessonCompletionProps {
   lessonIndex: number;
   totalLessons: number;
   onCompleted?: () => void;
+}
+
+interface LessonCompletionData {
+  lessonId: string;
+  courseId: string;
+  completed: boolean;
+  progress_percentage: number;
+  completed_at?: string;
 }
 
 const LessonCompletion: React.FC<LessonCompletionProps> = ({
@@ -35,19 +42,14 @@ const LessonCompletion: React.FC<LessonCompletionProps> = ({
   
   const fetchCompletionStatus = async () => {
     try {
-      const { data, error } = await supabase
-        .from('lesson_completions')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('lesson_id', lessonId)
-        .single();
+      if (!user) return;
       
-      if (error) {
-        console.error('Error fetching completion status:', error);
-        return;
-      }
+      // Get completion data from localStorage
+      const storageKey = `lesson_completion_${user.id}_${lessonId}`;
+      const storedData = localStorage.getItem(storageKey);
       
-      if (data) {
+      if (storedData) {
+        const data = JSON.parse(storedData) as LessonCompletionData;
         setCompleted(data.completed);
         setProgress(data.progress_percentage);
       }
@@ -69,23 +71,18 @@ const LessonCompletion: React.FC<LessonCompletionProps> = ({
     setLoading(true);
     
     try {
-      // Update completion status
-      const { data, error } = await supabase
-        .from('lesson_completions')
-        .upsert({
-          user_id: user.id,
-          lesson_id: lessonId,
-          course_id: courseId,
-          completed: true,
-          progress_percentage: 100,
-          completed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select();
+      // Create completion data
+      const completionData: LessonCompletionData = {
+        lessonId,
+        courseId,
+        completed: true,
+        progress_percentage: 100,
+        completed_at: new Date().toISOString()
+      };
       
-      if (error) {
-        throw error;
-      }
+      // Store in localStorage
+      const storageKey = `lesson_completion_${user.id}_${lessonId}`;
+      localStorage.setItem(storageKey, JSON.stringify(completionData));
       
       setCompleted(true);
       setProgress(100);
@@ -114,17 +111,28 @@ const LessonCompletion: React.FC<LessonCompletionProps> = ({
     if (!user) return;
     
     try {
-      await supabase
-        .from('lesson_completions')
-        .upsert({
-          user_id: user.id,
-          lesson_id: lessonId,
-          course_id: courseId,
-          completed: newProgress === 100,
-          progress_percentage: newProgress,
-          completed_at: newProgress === 100 ? new Date().toISOString() : null,
-          updated_at: new Date().toISOString()
-        });
+      const storageKey = `lesson_completion_${user.id}_${lessonId}`;
+      const existingDataStr = localStorage.getItem(storageKey);
+      
+      const completionData: LessonCompletionData = existingDataStr 
+        ? JSON.parse(existingDataStr)
+        : {
+            lessonId,
+            courseId,
+            completed: newProgress === 100,
+            progress_percentage: newProgress,
+            completed_at: newProgress === 100 ? new Date().toISOString() : undefined
+          };
+      
+      // Update the progress
+      completionData.progress_percentage = newProgress;
+      if (newProgress === 100) {
+        completionData.completed = true;
+        completionData.completed_at = new Date().toISOString();
+      }
+      
+      // Store back in localStorage
+      localStorage.setItem(storageKey, JSON.stringify(completionData));
       
       setProgress(newProgress);
       if (newProgress === 100) {
@@ -151,7 +159,7 @@ const LessonCompletion: React.FC<LessonCompletionProps> = ({
       if (progressRounded > progress && !completed) {
         setProgress(progressRounded);
         
-        // Don't update database on every scroll - only when progress increases by 10%
+        // Don't update storage on every scroll - only when progress increases by 10%
         if (progressRounded % 10 === 0 || progressRounded === 100) {
           updateProgress(progressRounded);
         }
