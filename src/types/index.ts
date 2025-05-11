@@ -1,3 +1,4 @@
+
 export interface Faculty {
   id: string;
   name: string;
@@ -13,6 +14,7 @@ export interface Department {
   slug: string;
   image: string;
   description: string;
+  facultyId: string;  // Added facultyId field
   courses: Course[];
 }
 
@@ -22,10 +24,11 @@ export interface Course {
   slug: string;
   image: string;
   description: string;
+  departmentId: string;  // Added departmentId field
   lessons: Lesson[];
   duration: string;
   modules?: string[];
-  difficulty: string;  // Changed from optional level to required difficulty
+  difficulty: string;
   rating?: number;
   reviews?: number;
   instructor?: string;
@@ -40,6 +43,7 @@ export interface Lesson {
   duration: string;
   content: string;
   description: string;
+  courseId: string;  // Added courseId field
   questions?: Question[];
 }
 
@@ -49,7 +53,7 @@ export interface Question {
   type: 'multiple-choice' | 'true-false' | 'open-ended';
   options?: string[];
   answer?: string;
-  // Removed lessonId as it's not defined in the type
+  lessonId?: string;  // Added lessonId field
 }
 
 // Define exam types
@@ -67,6 +71,9 @@ export interface ExamQuestion {
   options: string[];
   answer: string;
   explanation: string;
+  exam_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Define token transaction type
@@ -147,17 +154,6 @@ export interface PracticeExam {
   created_at: string;
   updated_at: string;
   questions?: ExamQuestion[];
-}
-
-export interface ExamQuestion {
-  id: string;
-  exam_id: string;
-  question: string;
-  options?: string[];
-  answer?: string;
-  explanation?: string;
-  created_at: string;
-  updated_at: string;
 }
 
 // Define user token types
