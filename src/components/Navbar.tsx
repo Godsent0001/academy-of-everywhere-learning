@@ -1,267 +1,145 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useTheme } from '@/hooks/use-theme';
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Search, User, Menu, X, BookOpen, ChevronDown } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
-import { useAuth } from '@/hooks/use-auth';
-import { 
-  MoonIcon, 
-  SunIcon, 
-  GraduationCap, 
-  Book, 
-  HelpCircle, 
-  User, 
-  Key,
-  Settings,
-  Scroll,
-  School,
-  Users
-} from 'lucide-react';
-import SubmitCourse from './SubmitCourse';
-import { cn } from '@/lib/utils';
 
-const Navbar: React.FC = () => {
-  const { theme, setTheme } = useTheme();
-  const { user, signOut } = useAuth();
+export const Navbar: React.FC = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isMobile = useIsMobile();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/courses?search=${encodeURIComponent(searchQuery)}`);
+      setSearchQuery('');
+      setIsMenuOpen(false);
+    }
+  };
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
-    <nav className="bg-background border-b shadow-sm sticky top-0 z-50">
-      <div className="container max-w-7xl flex items-center justify-between py-4">
-        <Link to="/" className="font-bold text-2xl font-serif">
-          Academy of Everywhere
-        </Link>
+    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center">
+              <BookOpen className="h-6 w-6 md:h-7 md:w-7 text-primary mr-2" />
+              <span className="text-xl md:text-2xl font-serif font-bold text-primary hidden sm:inline">Academy of Everywhere</span>
+              <span className="text-lg font-serif font-bold text-primary sm:hidden">Academy of Everywhere</span>
+            </Link>
+          </div>
 
-        <NavigationMenu className="hidden md:flex">
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <Link to="/courses" className={navigationMenuTriggerStyle()}>
-                Courses
-              </Link>
-            </NavigationMenuItem>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8 mx-4 flex-grow justify-center">
+            <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Home</Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="text-gray-700 hover:text-primary transition-colors flex items-center">
+                Academics <ChevronDown className="h-4 w-4 ml-1" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <Link to="/faculties" className="w-full">Faculties</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/courses" className="w-full">All Courses</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Link to="/student/help" className="text-gray-700 hover:text-primary transition-colors">Study Help</Link>
+            <Link to="/about" className="text-gray-700 hover:text-primary transition-colors">About</Link>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <form onSubmit={handleSearch} className="hidden md:flex relative">
+              <Input
+                type="text"
+                placeholder="Search courses..."
+                className="w-[200px] pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+            </form>
             
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>Faculties</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                  <li className="row-span-3">
-                    <NavigationMenuLink asChild>
-                      <Link
-                        className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-primary/50 to-primary p-6 no-underline outline-none focus:shadow-md"
-                        to="/faculties"
-                      >
-                        <School className="h-6 w-6 text-white" />
-                        <div className="mb-2 mt-4 text-lg font-medium text-white">
-                          All Faculties
-                        </div>
-                        <p className="text-sm leading-tight text-white/90">
-                          Explore all our academic faculties and departments
-                        </p>
-                      </Link>
-                    </NavigationMenuLink>
-                  </li>
-                  <li>
-                    <Link
-                      to="/faculty/science"
-                      className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                    >
-                      <div className="text-sm font-medium leading-none">Science</div>
-                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                        Physics, Chemistry, Biology and more
-                      </p>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/faculty/engineering"
-                      className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                    >
-                      <div className="text-sm font-medium leading-none">Engineering</div>
-                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                        Mechanical, Civil, Electrical and more
-                      </p>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/faculty/computer-science"
-                      className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                    >
-                      <div className="text-sm font-medium leading-none">Computer Science</div>
-                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                        Programming, Data Science, AI and more
-                      </p>
-                    </Link>
-                  </li>
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-            
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-                  <li className="row-span-3">
-                    <NavigationMenuLink asChild>
-                      <Link
-                        className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-secondary/50 to-secondary p-6 no-underline outline-none focus:shadow-md"
-                        to="/student/help"
-                      >
-                        <HelpCircle className="h-6 w-6 text-white" />
-                        <div className="mb-2 mt-4 text-lg font-medium text-white">
-                          Study Help
-                        </div>
-                        <p className="text-sm leading-tight text-white/90">
-                          Get assistance with your studies and academic journey
-                        </p>
-                      </Link>
-                    </NavigationMenuLink>
-                  </li>
-                  <li>
-                    <Link
-                      to="/student/materials"
-                      className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                    >
-                      <div className="text-sm font-medium leading-none">Study Materials</div>
-                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                        Access learning resources and materials
-                      </p>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/about"
-                      className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                    >
-                      <div className="text-sm font-medium leading-none">About Us</div>
-                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                        Learn about our institution and mission
-                      </p>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/certificates"
-                      className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                    >
-                      <div className="text-sm font-medium leading-none">Certificates</div>
-                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                        View and verify academic certificates
-                      </p>
-                    </Link>
-                  </li>
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem>
-              <Link to="/study-group/featured" className={navigationMenuTriggerStyle()}>
-                <Users className="mr-1 h-4 w-4" />
-                Study Groups
+            <div className="hidden sm:flex space-x-2">
+              <Link to="/signin">
+                <Button variant="ghost" size="sm" className="flex items-center">
+                  <User className="h-4 w-4 mr-2" />
+                  Sign In
+                </Button>
               </Link>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
+              <Link to="/signup">
+                <Button size="sm">Sign Up</Button>
+              </Link>
+            </div>
 
-        <div className="flex items-center space-x-4">
-          <SubmitCourse />
-
-          <Button variant="ghost" size="sm" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
-            {theme === "light" ? <MoonIcon className="h-4 w-4" /> : <SunIcon className="h-4 w-4" />}
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                {user ? (
-                  <img
-                    src={user.user_metadata?.avatar_url || "/placeholder.svg"}
-                    alt="Avatar"
-                    className="h-8 w-8 rounded-full"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "/placeholder.svg";
-                    }}
-                  />
-                ) : (
-                  <User className="h-4 w-4" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {user ? (
-                <>
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile">
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/student/help">
-                      <HelpCircle className="mr-2 h-4 w-4" />
-                      Study Help
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/student/materials">
-                      <Book className="mr-2 h-4 w-4" />
-                      Study Materials
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/student/tokens">
-                      <GraduationCap className="mr-2 h-4 w-4" />
-                      My Tokens
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>
-                    <Key className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </>
-              ) : (
-                <>
-                  <DropdownMenuItem asChild>
-                    <Link to="/signin">
-                      Sign In
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/signup">
-                      Sign Up
-                    </Link>
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            {/* Mobile menu button */}
+            <Button variant="ghost" size="icon" className="md:hidden h-10 w-10" onClick={toggleMenu}>
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          </div>
         </div>
+
+        {/* Mobile menu */}
+        {isMenuOpen && (
+          <div className="md:hidden mt-4 pb-4 animate-fade-in">
+            <form onSubmit={handleSearch} className="mb-4 relative">
+              <Input
+                type="text"
+                placeholder="Search courses..."
+                className="w-full pl-8 h-12 text-base"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
+              <Button 
+                type="submit" 
+                size="sm" 
+                className="absolute right-1 top-1 h-10"
+              >
+                Search
+              </Button>
+            </form>
+            <div className="flex flex-col space-y-4">
+              <Link to="/" className="text-gray-700 hover:text-primary py-3 text-lg border-b border-gray-100 font-medium transition-colors" onClick={toggleMenu}>Home</Link>
+              <Link to="/faculties" className="text-gray-700 hover:text-primary py-3 text-lg border-b border-gray-100 font-medium transition-colors" onClick={toggleMenu}>Faculties</Link>
+              <Link to="/courses" className="text-gray-700 hover:text-primary py-3 text-lg border-b border-gray-100 font-medium transition-colors" onClick={toggleMenu}>All Courses</Link>
+              <Link to="/student/help" className="text-gray-700 hover:text-primary py-3 text-lg border-b border-gray-100 font-medium transition-colors flex items-center justify-between" onClick={toggleMenu}>
+                <span>Study Help</span>
+                <span className="bg-primary/10 text-primary py-1 px-3 rounded-full text-sm">New!</span>
+              </Link>
+              <Link to="/about" className="text-gray-700 hover:text-primary py-3 text-lg font-medium transition-colors" onClick={toggleMenu}>About</Link>
+              <div className="pt-4 flex space-x-3">
+                <Link to="/signin" className="w-1/2">
+                  <Button variant="outline" className="w-full h-12 text-base" onClick={toggleMenu}>Sign In</Button>
+                </Link>
+                <Link to="/signup" className="w-1/2">
+                  <Button className="w-full h-12 text-base" onClick={toggleMenu}>Sign Up</Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );
