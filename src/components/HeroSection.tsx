@@ -22,9 +22,9 @@ export const HeroSection: React.FC = () => {
                 Explore Courses
               </Button>
             </Link>
-            <Link to="/about">
+            <Link to="/student/help">
               <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white/10">
-                Learn More
+                Study Help
               </Button>
             </Link>
           </div>

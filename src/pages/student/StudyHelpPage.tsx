@@ -6,258 +6,374 @@ import { FileUploader } from '@/components/FileUploader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, BookOpen, FileText, Download, Upload, Clock, Calendar, Users } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Textarea } from '@/components/ui/textarea';
+import { GraduationCap, BookOpen, FileText, Download, Upload, Clock, Calendar, Users, FileImage, FileVideo } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Link } from 'react-router-dom';
+import { FileItem } from '@/components/FileItem';
 
 const StudyHelpPage: React.FC = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  
+  const [files, setFiles] = useState<{
+    id: string;
+    name: string;
+    size: number;
+    type: string;
+    uploadDate: string;
+    status: 'uploaded' | 'processing' | 'processed';
+  }[]>([]);
+  const [question, setQuestion] = useState('');
 
-  const handleFilesSelected = (files: File[]) => {
-    toast({
-      title: "Files uploaded successfully",
-      description: `You have uploaded ${files.length} file(s).`,
-    });
-
-    // Here you would normally process the files, perhaps upload them to a server
-    console.log('Files selected:', files);
+  const handleFileUpload = (newFiles: File[]) => {
+    const newUploadedFiles = newFiles.map(file => ({
+      id: Math.random().toString(36).substring(2, 9),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      uploadDate: new Date().toISOString(),
+      status: 'uploaded' as const
+    }));
+    
+    setFiles(prev => [...prev, ...newUploadedFiles]);
+    
+    // Simulate processing
+    setTimeout(() => {
+      setFiles(prev => 
+        prev.map(f => 
+          newUploadedFiles.some(nf => nf.id === f.id) 
+            ? { ...f, status: 'processing' as const } 
+            : f
+        )
+      );
+      
+      // Simulate completion
+      setTimeout(() => {
+        setFiles(prev => 
+          prev.map(f => 
+            newUploadedFiles.some(nf => nf.id === f.id) 
+              ? { ...f, status: 'processed' as const } 
+              : f
+          )
+        );
+        
+        toast({
+          title: "Analysis Complete",
+          description: "Your materials have been processed and are ready for study.",
+        });
+      }, 3000);
+    }, 1500);
   };
-
-  const resourceCategories = [
-    {
-      title: "Study Notes",
-      icon: <FileText className="h-6 w-6" />,
-      description: "Access comprehensive study notes for all courses",
-      count: 248
-    },
-    {
-      title: "Practice Exams",
-      icon: <GraduationCap className="h-6 w-6" />,
-      description: "Test your knowledge with past exams and quizzes",
-      count: 75
-    },
-    {
-      title: "Reading Materials",
-      icon: <BookOpen className="h-6 w-6" />,
-      description: "Essential readings and additional resources",
-      count: 130
-    }
-  ];
-
-  const upcomingStudySessions = [
-    {
-      title: "Data Structures Review",
-      time: "Today, 3:00 PM",
-      participants: 12
-    },
-    {
-      title: "Biology Concepts Group Study",
-      time: "Tomorrow, 5:00 PM",
-      participants: 8
-    },
-    {
-      title: "Economics Final Prep",
-      time: "May 12, 4:30 PM",
-      participants: 15
-    }
-  ];
+  
+  const handleDeleteFile = (id: string) => {
+    setFiles(prev => prev.filter(file => file.id !== id));
+  };
+  
+  const handleQuestionSubmit = () => {
+    if (!question.trim()) return;
+    
+    toast({
+      title: "Question Submitted",
+      description: "Our AI tutor is working on an answer for you.",
+    });
+    
+    // Reset question
+    setQuestion('');
+    
+    // Simulate AI response
+    setTimeout(() => {
+      toast({
+        title: "Answer Ready",
+        description: "Check the AI Tutor tab for your response.",
+      });
+    }, 2000);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-r from-primary/90 to-primary text-white py-12 md:py-16">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl">
-              <h1 className="text-3xl md:text-4xl font-serif font-bold mb-4">Study Help Center</h1>
-              <p className="text-lg md:text-xl opacity-90 mb-6">
-                Access and share study materials, join group study sessions, and enhance your learning experience.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Button variant="secondary" size={isMobile ? "lg" : "default"} className="font-medium">
-                  <Download className="mr-2 h-4 w-4" /> Browse Resources
-                </Button>
-                <Button variant="outline" size={isMobile ? "lg" : "default"} className="bg-white/10 hover:bg-white/20 text-white border-white/30">
-                  <Users className="mr-2 h-4 w-4" /> Join Study Group
-                </Button>
-              </div>
-            </div>
+        <div className="bg-primary text-white py-12">
+          <div className="container mx-auto px-4 text-center">
+            <h1 className="text-3xl md:text-4xl font-serif font-bold mb-4">Student Help Center</h1>
+            <p className="text-xl max-w-2xl mx-auto">
+              Upload your study materials for AI-powered analysis, summaries, and practice questions
+            </p>
           </div>
         </div>
-
-        {/* Main Content */}
-        <div className="container mx-auto px-4 py-8 md:py-12">
+        
+        <div className="container mx-auto px-4 py-12">
           <Tabs defaultValue="upload" className="w-full">
-            <TabsList className="mb-8 w-full justify-start overflow-x-auto pb-2 scrollbar-hide">
-              <TabsTrigger value="upload" className="text-base py-2">Upload Materials</TabsTrigger>
-              <TabsTrigger value="resources" className="text-base py-2">Study Resources</TabsTrigger>
-              <TabsTrigger value="groups" className="text-base py-2">Study Groups</TabsTrigger>
+            <TabsList className="mb-8 w-full flex flex-wrap justify-center">
+              <TabsTrigger value="upload" className="flex-grow md:flex-grow-0">
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Materials
+              </TabsTrigger>
+              <TabsTrigger value="summaries" className="flex-grow md:flex-grow-0">
+                <BookText className="h-4 w-4 mr-2" />
+                Study Notes
+              </TabsTrigger>
+              <TabsTrigger value="practice" className="flex-grow md:flex-grow-0">
+                <FileText className="h-4 w-4 mr-2" />
+                Practice Questions
+              </TabsTrigger>
+              <TabsTrigger value="readings" className="flex-grow md:flex-grow-0">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Reading Materials
+              </TabsTrigger>
             </TabsList>
-
-            <TabsContent value="upload">
-              <div className="max-w-3xl mx-auto">
+            
+            <TabsContent value="upload" className="space-y-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Upload Study Materials</CardTitle>
+                  <CardDescription>
+                    Upload textbooks, notes, slides or any study materials for AI analysis.
+                    Supported formats: PDF, DOC, DOCX, PPT, PPTX, TXT, JPG, PNG
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FileUploader 
+                    onFilesSelected={handleFileUpload}
+                    maxSize={10485760} // 10 MB
+                    accept={{
+                      'application/pdf': ['.pdf'],
+                      'application/msword': ['.doc'],
+                      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+                      'application/vnd.ms-powerpoint': ['.ppt'],
+                      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+                      'text/plain': ['.txt'],
+                      'image/jpeg': ['.jpg', '.jpeg'],
+                      'image/png': ['.png'],
+                    }}
+                  />
+                </CardContent>
+              </Card>
+              
+              {files.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Share Your Study Materials</CardTitle>
+                    <CardTitle>Uploaded Materials</CardTitle>
                     <CardDescription>
-                      Help fellow students by uploading notes, study guides, or other helpful resources
+                      Your files will be automatically analyzed upon upload
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <FileUploader 
-                      onFilesSelected={handleFilesSelected}
-                      maxSize={10 * 1024 * 1024} // 10MB
-                      accept={{
-                        'application/pdf': ['.pdf'],
-                        'application/msword': ['.doc', '.docx'],
-                        'text/plain': ['.txt'],
-                        'image/png': ['.png'],
-                        'image/jpeg': ['.jpg', '.jpeg']
-                      }}
-                    />
-                  </CardContent>
-                </Card>
-                
-                <div className="mt-8">
-                  <h3 className="text-lg font-medium mb-4">Guidelines for Sharing Materials</h3>
-                  <ul className="list-disc pl-5 space-y-2 text-gray-700">
-                    <li>Share only study materials that you have created or have permission to share.</li>
-                    <li>Do not upload proprietary content, exams, or instructor materials without permission.</li>
-                    <li>Make sure documents are clear, organized, and properly labeled.</li>
-                    <li>Be respectful of others' work and give credit when appropriate.</li>
-                  </ul>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="resources">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                {resourceCategories.map((category, index) => (
-                  <Card key={index} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="mr-3 bg-primary/10 p-2 rounded-full">
-                            {category.icon}
-                          </div>
-                          <CardTitle>{category.title}</CardTitle>
-                        </div>
-                        <span className="bg-primary/10 text-primary font-medium py-1 px-3 rounded-full text-sm">
-                          {category.count}
-                        </span>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription>{category.description}</CardDescription>
-                      <Button variant="link" className="px-0 mt-2">
-                        Browse {category.title} →
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              
-              <h2 className="text-2xl font-serif font-bold mb-4">Recently Added Resources</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Card key={i} className="hover:bg-gray-50 transition-colors">
-                    <CardContent className="p-4 flex items-center gap-3">
-                      <div className="bg-gray-100 p-2 rounded">
-                        <FileText className="h-5 w-5 text-gray-500" />
-                      </div>
-                      <div className="overflow-hidden">
-                        <h3 className="font-medium truncate">
-                          {["Study Guide - Introduction to Psychology", 
-                            "Calculus Formula Sheet", 
-                            "Organic Chemistry Lab Notes",
-                            "Computer Science Algorithms Cheat Sheet",
-                            "Business Ethics Case Studies",
-                            "World History Timeline"][i]}
-                        </h3>
-                        <p className="text-xs text-gray-500 flex items-center mt-1">
-                          <Clock className="h-3 w-3 mr-1" /> Added {i + 1} day{i !== 0 ? 's' : ''} ago
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="groups">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl">Upcoming Study Sessions</CardTitle>
-                    <CardDescription>Join virtual study groups and collaborate with peers</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {upcomingStudySessions.map((session, index) => (
-                        <div key={index} className="flex justify-between items-center p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
-                          <div>
-                            <h3 className="font-medium">{session.title}</h3>
-                            <div className="flex items-center text-sm text-gray-500 mt-1">
-                              <Calendar className="h-3.5 w-3.5 mr-1" />
-                              <span>{session.time}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center">
-                            <span className="text-sm text-gray-500 mr-2">
-                              {session.participants} participants
-                            </span>
-                            <Button size="sm">Join</Button>
-                          </div>
-                        </div>
+                    <div className="space-y-3">
+                      {files.map(file => (
+                        <FileItem 
+                          key={file.id} 
+                          file={file}
+                          onDelete={() => handleDeleteFile(file.id)} 
+                        />
                       ))}
                     </div>
-                    <Button variant="outline" className="w-full mt-4">
-                      Create Study Session
-                    </Button>
                   </CardContent>
                 </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl">Benefits of Study Groups</CardTitle>
-                    <CardDescription>Why collaborative learning works</CardDescription>
-                  </CardHeader>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="summaries">
+              {files.filter(file => file.status === 'processed').length > 0 ? (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Study Notes</CardTitle>
+                      <CardDescription>
+                        AI-generated summaries of your uploaded materials
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {files.filter(file => file.status === 'processed').map(file => (
+                          <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
+                            <CardHeader className="p-4 pb-2">
+                              <CardTitle className="text-lg font-medium">{file.name}</CardTitle>
+                              <CardDescription className="text-xs flex items-center">
+                                <Clock className="h-3 w-3 mr-1 inline" /> 
+                                Processed {new Date(file.uploadDate).toLocaleDateString()}
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-2">
+                              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                                {file.type.includes('image') ? (
+                                  <>The AI has analyzed this image and identified key concepts related to 
+                                  the subject matter. The main topics include molecular structures, 
+                                  cellular processes, and biochemical pathways.</>
+                                ) : (
+                                  <>The AI has analyzed this document and created a summary 
+                                  highlighting the key concepts, theories, and principles.</>
+                                )}
+                              </p>
+                              <Button variant="default" size="sm" className="w-full">
+                                View Summary
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <h2 className="text-2xl font-serif font-bold mt-8 mb-4">Recently Added Study Notes</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {files.filter(file => file.status === 'processed')
+                      .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime())
+                      .slice(0, 6)
+                      .map(file => (
+                      <Card key={file.id} className="hover:bg-gray-50 transition-colors">
+                        <CardContent className="p-4 flex items-center gap-3">
+                          <div className="bg-gray-100 p-2 rounded">
+                            <FileText className="h-5 w-5 text-gray-500" />
+                          </div>
+                          <div className="overflow-hidden">
+                            <h3 className="font-medium truncate">{file.name}</h3>
+                            <p className="text-xs text-gray-500 flex items-center mt-1">
+                              <Clock className="h-3 w-3 mr-1" /> Added recently
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <Card className="p-8 text-center">
                   <CardContent>
-                    <ul className="space-y-4">
-                      {[
-                        {
-                          title: "Enhanced Understanding",
-                          description: "Discussing concepts with peers helps solidify your understanding."
-                        },
-                        {
-                          title: "Diverse Perspectives",
-                          description: "Gain insights from different approaches and viewpoints."
-                        },
-                        {
-                          title: "Accountability",
-                          description: "Stay motivated with regular study schedules and peer support."
-                        },
-                        {
-                          title: "Teaching Reinforces Learning",
-                          description: "Explaining concepts to others strengthens your own knowledge."
-                        }
-                      ].map((benefit, index) => (
-                        <li key={index} className="flex">
-                          <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5">
-                            <GraduationCap className="h-4 w-4 text-primary" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium">{benefit.title}</h4>
-                            <p className="text-sm text-gray-600">{benefit.description}</p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="flex flex-col items-center">
+                      <FileText className="h-16 w-16 text-gray-300 mb-4" />
+                      <h3 className="text-xl font-medium mb-2">No Study Notes Available</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Upload some study materials first, and we'll generate summaries for you
+                      </p>
+                      <Button variant="outline" onClick={() => document.querySelector('[data-value="upload"]')?.dispatchEvent(new Event('click'))}>
+                        Upload Materials
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
-              </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="practice">
+              {files.filter(file => file.status === 'processed').length > 0 ? (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Practice Questions</CardTitle>
+                      <CardDescription>
+                        AI-generated questions based on your study materials
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {files.filter(file => file.status === 'processed').map(file => (
+                          <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
+                            <CardHeader className="p-4 pb-2">
+                              <CardTitle className="text-lg font-medium">{file.name}</CardTitle>
+                              <CardDescription className="text-xs flex items-center">
+                                <GraduationCap className="h-3 w-3 mr-1 inline" /> 
+                                {Math.floor(Math.random() * 15) + 5} questions available
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-2">
+                              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                                Practice questions cover key concepts from this material, including multiple-choice, 
+                                fill-in-the-blank, and short answer formats.
+                              </p>
+                              <Button variant="default" size="sm" className="w-full">
+                                Start Practice Quiz
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <Card className="p-8 text-center">
+                  <CardContent>
+                    <div className="flex flex-col items-center">
+                      <FileText className="h-16 w-16 text-gray-300 mb-4" />
+                      <h3 className="text-xl font-medium mb-2">No Practice Questions Available</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Upload some study materials first, and we'll generate practice questions for you
+                      </p>
+                      <Button variant="outline" onClick={() => document.querySelector('[data-value="upload"]')?.dispatchEvent(new Event('click'))}>
+                        Upload Materials
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="readings">
+              {files.filter(file => file.status === 'processed').length > 0 ? (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Recommended Reading Materials</CardTitle>
+                      <CardDescription>
+                        Additional resources based on your uploaded materials
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {files.filter(file => file.status === 'processed').map(file => (
+                          <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
+                            <CardHeader className="p-4 pb-2">
+                              <CardTitle className="text-lg font-medium">{file.name}</CardTitle>
+                              <CardDescription className="text-xs flex items-center">
+                                <BookOpen className="h-3 w-3 mr-1 inline" /> 
+                                {Math.floor(Math.random() * 4) + 2} reading suggestions
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-2">
+                              <ul className="text-sm text-muted-foreground space-y-1 mb-3">
+                                {Array.from({ length: Math.floor(Math.random() * 3) + 2 }).map((_, idx) => (
+                                  <li key={idx} className="truncate flex items-start">
+                                    <span className="text-primary mr-1 mt-0.5">•</span>
+                                    {[
+                                      "Introduction to the Core Concepts",
+                                      "Advanced Theory and Applications",
+                                      "Practical Implementation Guide",
+                                      "Historical Context and Development",
+                                      "Current Research and Trends"
+                                    ][idx % 5]} {file.name.split('.')[0]}
+                                  </li>
+                                ))}
+                              </ul>
+                              <Button variant="default" size="sm" className="w-full">
+                                View All Reading Materials
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <Card className="p-8 text-center">
+                  <CardContent>
+                    <div className="flex flex-col items-center">
+                      <BookOpen className="h-16 w-16 text-gray-300 mb-4" />
+                      <h3 className="text-xl font-medium mb-2">No Reading Recommendations Available</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Upload some study materials first, and we'll suggest additional reading materials
+                      </p>
+                      <Button variant="outline" onClick={() => document.querySelector('[data-value="upload"]')?.dispatchEvent(new Event('click'))}>
+                        Upload Materials
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         </div>
