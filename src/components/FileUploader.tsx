@@ -7,19 +7,27 @@ interface FileUploaderProps {
   onFilesSelected: (files: File[]) => void;
   maxSize?: number;
   accept?: Record<string, string[]>;
+  maxFiles?: number;
 }
 
 export const FileUploader: React.FC<FileUploaderProps> = ({ 
   onFilesSelected, 
   maxSize,
-  accept 
+  accept,
+  maxFiles 
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const filesArray = Array.from(e.target.files);
+      let filesArray = Array.from(e.target.files);
+      
+      // Limit number of files if maxFiles is specified
+      if (maxFiles && filesArray.length > maxFiles) {
+        filesArray = filesArray.slice(0, maxFiles);
+      }
+      
       onFilesSelected(filesArray);
       
       // Reset file input
@@ -52,7 +60,13 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     setIsDragging(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const filesArray = Array.from(e.dataTransfer.files);
+      let filesArray = Array.from(e.dataTransfer.files);
+      
+      // Limit number of files if maxFiles is specified
+      if (maxFiles && filesArray.length > maxFiles) {
+        filesArray = filesArray.slice(0, maxFiles);
+      }
+      
       onFilesSelected(filesArray);
     }
   };
@@ -82,7 +96,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     >
       <input
         type="file"
-        multiple
+        multiple={maxFiles !== 1}
         className="hidden"
         ref={fileInputRef}
         onChange={handleFileInputChange}
@@ -97,15 +111,16 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         <div>
           <h3 className="text-lg font-medium">Upload your study materials</h3>
           <p className="text-sm text-gray-500 mt-1">
-            Drag and drop files here, or click to select files
+            Drag and drop {maxFiles === 1 ? 'a file' : 'files'} here, or click to select {maxFiles === 1 ? 'a file' : 'files'}
           </p>
           <p className="text-xs text-gray-400 mt-2">
             Supported formats: PDF, Word, Text, Images
+            {maxFiles && <span> (Max {maxFiles} {maxFiles === 1 ? 'file' : 'files'})</span>}
           </p>
         </div>
         
         <Button type="button" onClick={handleButtonClick}>
-          Select Files
+          Select {maxFiles === 1 ? 'File' : 'Files'}
         </Button>
       </div>
     </div>
