@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload, FileText, FileImage } from 'lucide-react';
@@ -8,13 +7,17 @@ interface FileUploaderProps {
   maxSize?: number;
   accept?: Record<string, string[]>;
   maxFiles?: number;
+  children?: React.ReactNode;
+  className?: string;
 }
 
 export const FileUploader: React.FC<FileUploaderProps> = ({ 
   onFilesSelected, 
   maxSize,
   accept,
-  maxFiles 
+  maxFiles,
+  children,
+  className
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -84,11 +87,32 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       .join(',');
   }
   
+  // If children is provided, render a custom UI
+  if (children) {
+    return (
+      <div 
+        className={className}
+        onClick={handleButtonClick}
+      >
+        <input
+          type="file"
+          multiple={maxFiles !== 1}
+          className="hidden"
+          ref={fileInputRef}
+          onChange={handleFileInputChange}
+          accept={acceptAttribute}
+        />
+        {children}
+      </div>
+    );
+  }
+  
+  // Otherwise render the default UI
   return (
     <div
       className={`border-2 border-dashed rounded-lg p-8 text-center ${
         isDragging ? 'border-primary bg-primary/5' : 'border-gray-300'
-      }`}
+      } ${className || ''}`}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
