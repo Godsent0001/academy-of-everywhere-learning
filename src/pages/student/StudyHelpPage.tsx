@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -113,7 +112,7 @@ const StudyHelpPage: React.FC = () => {
                 Upload Materials
               </TabsTrigger>
               <TabsTrigger value="summaries" className="flex-grow md:flex-grow-0">
-                <BookText className="h-4 w-4 mr-2" />
+                <FileText className="h-4 w-4 mr-2" />
                 Study Notes
               </TabsTrigger>
               <TabsTrigger value="practice" className="flex-grow md:flex-grow-0">
