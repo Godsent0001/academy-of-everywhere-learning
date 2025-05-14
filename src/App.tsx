@@ -19,6 +19,7 @@ import AboutPage from "./pages/AboutPage";
 import SignInPage from "./pages/auth/SignInPage";
 import SignUpPage from "./pages/auth/SignUpPage";
 import StudyHelpPage from "./pages/student/StudyHelpPage";
+import CourseCreatorPage from "./pages/course/CourseCreatorPage";
 
 // Create the query client
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/student/help" element={<StudyHelpPage />} />
           <Route path="/student/materials" element={<StudyHelpPage />} />
+          <Route path="/course-creator" element={<CourseCreatorPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>
