@@ -1,15 +1,18 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CourseCard from '@/components/CourseCard';
 import { faculties } from '@/data/faculties';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { Faculty, Department, Course } from '@/types';
+import { ChevronDown } from 'lucide-react';
 
 const FacultyDetailsPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [showAllDepartments, setShowAllDepartments] = useState(false);
   
   const faculty = faculties.find((f) => f.slug === slug);
   
@@ -30,6 +33,12 @@ const FacultyDetailsPage: React.FC = () => {
       </div>
     );
   }
+
+  // Display only a limited number of departments initially
+  const initialDisplayCount = 3;
+  const displayedDepartments = showAllDepartments 
+    ? faculty.departments 
+    : faculty.departments.slice(0, initialDisplayCount);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -71,7 +80,7 @@ const FacultyDetailsPage: React.FC = () => {
                 <div>
                   <h2 className="text-2xl font-serif font-medium mb-4">Departments</h2>
                   <div className="space-y-4">
-                    {faculty.departments.map((department) => (
+                    {displayedDepartments.map((department) => (
                       <div key={department.id} className="border rounded-md p-4">
                         <h3 className="font-medium mb-1">{department.name}</h3>
                         <p className="text-gray-600 text-sm mb-2">{department.description}</p>
@@ -80,6 +89,16 @@ const FacultyDetailsPage: React.FC = () => {
                         </Link>
                       </div>
                     ))}
+                    {faculty.departments.length > initialDisplayCount && !showAllDepartments && (
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowAllDepartments(true)}
+                        className="w-full mt-2 flex items-center justify-center"
+                      >
+                        <span>See More Departments</span>
+                        <ChevronDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

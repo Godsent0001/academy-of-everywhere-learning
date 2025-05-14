@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Course } from '@/types';
 import { Clock, Book, GraduationCap, Award } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface CourseSidebarProps {
   course: Course;
@@ -11,6 +12,9 @@ interface CourseSidebarProps {
 }
 
 const CourseSidebar: React.FC<CourseSidebarProps> = ({ course, isEnrolled, setIsEnrolled }) => {
+  // Get the first lesson for redirect when "Continue Learning" is clicked
+  const firstLesson = course.lessons && course.lessons.length > 0 ? course.lessons[0] : null;
+
   return (
     <div className="border rounded-lg overflow-hidden sticky top-24">
       <div className="aspect-video overflow-hidden relative">
@@ -57,9 +61,17 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ course, isEnrolled, setIs
             </div>
           </li>
         </ul>
-        <Button className="w-full mt-6" onClick={() => setIsEnrolled(!isEnrolled)}>
-          {isEnrolled ? "Continue Learning" : "Enroll Now"}
-        </Button>
+        {isEnrolled && firstLesson ? (
+          <Link to={`/lesson/${firstLesson.slug}`}>
+            <Button className="w-full mt-6">
+              Continue Learning
+            </Button>
+          </Link>
+        ) : (
+          <Button className="w-full mt-6" onClick={() => setIsEnrolled(true)}>
+            Enroll Now
+          </Button>
+        )}
       </div>
     </div>
   );

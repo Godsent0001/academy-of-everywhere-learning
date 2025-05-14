@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { FileUploader } from '@/components/FileUploader';
@@ -89,12 +89,48 @@ const StudyHelpPage: React.FC = () => {
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8 md:py-12">
-          <Tabs defaultValue="resources" className="w-full">
+          <Tabs defaultValue="upload" className="w-full">
             <TabsList className="mb-8 w-full justify-start overflow-x-auto pb-2 scrollbar-hide">
-              <TabsTrigger value="resources" className="text-base py-2">Study Resources</TabsTrigger>
               <TabsTrigger value="upload" className="text-base py-2">Upload Materials</TabsTrigger>
+              <TabsTrigger value="resources" className="text-base py-2">Study Resources</TabsTrigger>
               <TabsTrigger value="groups" className="text-base py-2">Study Groups</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="upload">
+              <div className="max-w-3xl mx-auto">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Share Your Study Materials</CardTitle>
+                    <CardDescription>
+                      Help fellow students by uploading notes, study guides, or other helpful resources
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <FileUploader 
+                      onFilesSelected={handleFilesSelected}
+                      maxSize={10 * 1024 * 1024} // 10MB
+                      accept={{
+                        'application/pdf': ['.pdf'],
+                        'application/msword': ['.doc', '.docx'],
+                        'text/plain': ['.txt'],
+                        'image/png': ['.png'],
+                        'image/jpeg': ['.jpg', '.jpeg']
+                      }}
+                    />
+                  </CardContent>
+                </Card>
+                
+                <div className="mt-8">
+                  <h3 className="text-lg font-medium mb-4">Guidelines for Sharing Materials</h3>
+                  <ul className="list-disc pl-5 space-y-2 text-gray-700">
+                    <li>Share only study materials that you have created or have permission to share.</li>
+                    <li>Do not upload proprietary content, exams, or instructor materials without permission.</li>
+                    <li>Make sure documents are clear, organized, and properly labeled.</li>
+                    <li>Be respectful of others' work and give credit when appropriate.</li>
+                  </ul>
+                </div>
+              </div>
+            </TabsContent>
 
             <TabsContent value="resources">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -147,42 +183,6 @@ const StudyHelpPage: React.FC = () => {
                     </CardContent>
                   </Card>
                 ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="upload">
-              <div className="max-w-3xl mx-auto">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Share Your Study Materials</CardTitle>
-                    <CardDescription>
-                      Help fellow students by uploading notes, study guides, or other helpful resources
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <FileUploader 
-                      onFilesSelected={handleFilesSelected}
-                      maxSize={10 * 1024 * 1024} // 10MB
-                      accept={{
-                        'application/pdf': ['.pdf'],
-                        'application/msword': ['.doc', '.docx'],
-                        'text/plain': ['.txt'],
-                        'image/png': ['.png'],
-                        'image/jpeg': ['.jpg', '.jpeg']
-                      }}
-                    />
-                  </CardContent>
-                </Card>
-                
-                <div className="mt-8">
-                  <h3 className="text-lg font-medium mb-4">Guidelines for Sharing Materials</h3>
-                  <ul className="list-disc pl-5 space-y-2 text-gray-700">
-                    <li>Share only study materials that you have created or have permission to share.</li>
-                    <li>Do not upload proprietary content, exams, or instructor materials without permission.</li>
-                    <li>Make sure documents are clear, organized, and properly labeled.</li>
-                    <li>Be respectful of others' work and give credit when appropriate.</li>
-                  </ul>
-                </div>
               </div>
             </TabsContent>
 
