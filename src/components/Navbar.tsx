@@ -93,9 +93,9 @@ export const Navbar: React.FC = () => {
               </Link>
             </div>
 
-            {/* Mobile menu button */}
-            <Button variant="ghost" size="icon" className="md:hidden h-10 w-10" onClick={toggleMenu}>
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {/* Mobile menu button - INCREASED SIZE */}
+            <Button variant="ghost" size="icon" className="md:hidden h-12 w-12" onClick={toggleMenu}>
+              {isMenuOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
             </Button>
           </div>
         </div>

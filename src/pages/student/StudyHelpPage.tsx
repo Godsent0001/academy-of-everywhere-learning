@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -240,42 +241,43 @@ const StudyHelpPage: React.FC = () => {
         </div>
         
         <div className="container mx-auto px-4 py-6 md:py-8">
-          {/* Fixed spacing issues in mobile tabs */}
+          {/* Improved mobile tabs with better spacing and layout */}
           <Tabs defaultValue="upload" className="w-full">
-            <TabsList className="mb-6 w-full grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap md:justify-center gap-2">
-              <TabsTrigger value="upload" className="flex-grow-0 h-auto py-2 px-4 w-full sm:w-auto">
-                <Upload className="h-5 w-5 mr-2" /> {/* Increased icon size */}
-                <span className="whitespace-normal">Upload Materials</span>
+            <TabsList className="mb-6 w-full grid grid-cols-1 gap-3">
+              {/* Using full-width buttons in a vertical stack on small screens */}
+              <TabsTrigger value="upload" className="flex items-center justify-center py-3">
+                <Upload className="h-5 w-5 mr-2" />
+                <span className="text-base">Upload Materials</span>
               </TabsTrigger>
-              <TabsTrigger value="summaries" className="flex-grow-0 h-auto py-2 px-4 w-full sm:w-auto">
-                <FileText className="h-5 w-5 mr-2" /> {/* Increased icon size */}
-                <span className="whitespace-normal">Study Notes</span>
+              <TabsTrigger value="summaries" className="flex items-center justify-center py-3">
+                <FileText className="h-5 w-5 mr-2" />
+                <span className="text-base">Study Notes</span>
               </TabsTrigger>
-              <TabsTrigger value="practice" className="flex-grow-0 h-auto py-2 px-4 w-full sm:w-auto">
-                <FileText className="h-5 w-5 mr-2" /> {/* Increased icon size */}
-                <span className="whitespace-normal">Practice Questions</span>
+              <TabsTrigger value="practice" className="flex items-center justify-center py-3">
+                <GraduationCap className="h-5 w-5 mr-2" />
+                <span className="text-base">Practice Questions</span>
               </TabsTrigger>
-              <TabsTrigger value="readings" className="flex-grow-0 h-auto py-2 px-4 w-full sm:w-auto">
-                <BookOpen className="h-5 w-5 mr-2" /> {/* Increased icon size */}
-                <span className="whitespace-normal">Reading Materials</span>
+              <TabsTrigger value="readings" className="flex items-center justify-center py-3">
+                <BookOpen className="h-5 w-5 mr-2" />
+                <span className="text-base">Reading Materials</span>
               </TabsTrigger>
-              <TabsTrigger value="ai-tutor" className="md:hidden flex-grow-0 h-auto py-2 px-4 w-full sm:w-auto">
-                <Sparkles className="h-5 w-5 mr-2" /> {/* Increased icon size */}
-                <span className="whitespace-normal">AI Tutor</span>
+              <TabsTrigger value="ai-tutor" className="md:hidden flex items-center justify-center py-3">
+                <Sparkles className="h-5 w-5 mr-2" />
+                <span className="text-base">AI Tutor</span>
               </TabsTrigger>
             </TabsList>
             
             {/* Increased spacing between tab content */}
-            <div className="mt-6">
-              <TabsContent value="upload" className="space-y-8"> {/* Increased space-y */}
+            <div className="mt-8">
+              <TabsContent value="upload" className="space-y-8">
                 <Card className="overflow-visible">
-                  <CardHeader className="pb-2">
+                  <CardHeader className="pb-3">
                     <CardTitle className="text-xl">Upload Study Materials</CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-sm">
                       Upload textbooks, notes, slides or any study materials for AI analysis
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="pt-4"> {/* Added padding top for spacing */}
+                  <CardContent className="pt-4">
                     <FileUploader 
                       onFilesSelected={handleFileUpload}
                       maxSize={10485760} // 10 MB
@@ -294,15 +296,15 @@ const StudyHelpPage: React.FC = () => {
                 </Card>
                 
                 {files.length > 0 && (
-                  <Card className="overflow-visible mt-8"> {/* Added margin top */}
+                  <Card className="overflow-visible mt-8">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-xl">Uploaded Materials</CardTitle>
-                      <CardDescription>
+                      <CardDescription className="text-sm">
                         Your files will be automatically analyzed upon upload
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="pt-4"> {/* Added padding top */}
-                      <div className="space-y-4"> {/* Increased spacing */}
+                    <CardContent className="pt-4">
+                      <div className="space-y-4">
                         {files.map(file => (
                           <FileItem 
                             key={file.id} 
@@ -316,23 +318,23 @@ const StudyHelpPage: React.FC = () => {
                 )}
               </TabsContent>
               
-              {/* Study Notes Tab */}
-              <TabsContent value="summaries" className="mt-6"> {/* Added margin top */}
+              {/* Study Notes Tab - Improved spacing and readability */}
+              <TabsContent value="summaries" className="space-y-8">
                 {files.filter(file => file.status === 'processed').length > 0 ? (
-                  <div className="space-y-8"> {/* Increased spacing */}
-                    <h2 className="text-2xl font-serif font-bold mb-6">Study Notes</h2> {/* Increased margin bottom */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> {/* Increased gap */}
+                  <div className="space-y-8">
+                    <h2 className="text-2xl font-serif font-bold mb-6">Study Notes</h2>
+                    <div className="grid grid-cols-1 gap-6">
                       {files.filter(file => file.status === 'processed').map(file => (
                         <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
-                          <CardHeader className="p-5 pb-3"> {/* Increased padding */}
+                          <CardHeader className="p-5 pb-3">
                             <CardTitle className="text-lg font-medium truncate">{file.name}</CardTitle>
-                            <CardDescription className="text-xs flex items-center">
+                            <CardDescription className="text-xs flex items-center mt-1">
                               <Clock className="h-3 w-3 mr-1 inline" /> 
                               Processed {new Date(file.uploadDate).toLocaleDateString()}
                             </CardDescription>
                           </CardHeader>
-                          <CardContent className="p-5 pt-3"> {/* Increased padding */}
-                            <p className="text-sm text-muted-foreground line-clamp-2 mb-4"> {/* Increased margin */}
+                          <CardContent className="p-5 pt-3">
+                            <p className="text-sm text-muted-foreground mb-4">
                               {file.type.includes('image') ? (
                                 <>The AI has analyzed this image and identified key concepts related to 
                                 the subject matter.</>
@@ -349,20 +351,20 @@ const StudyHelpPage: React.FC = () => {
                       ))}
                     </div>
                     
-                    <h2 className="text-2xl font-serif font-bold mt-10 mb-6">Recently Added</h2> {/* Increased margin */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"> {/* Increased gap */}
+                    <h2 className="text-2xl font-serif font-bold mt-10 mb-6">Recently Added</h2>
+                    <div className="grid grid-cols-1 gap-6">
                       {files.filter(file => file.status === 'processed')
                         .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime())
                         .slice(0, 3)
                         .map(file => (
                         <Card key={file.id} className="hover:bg-gray-50 transition-colors">
-                          <CardContent className="p-5 flex items-center gap-4"> {/* Increased padding and gap */}
-                            <div className="bg-gray-100 p-3 rounded-md"> {/* Increased padding and added rounded-md */}
-                              <FileText className="h-6 w-6 text-gray-500" /> {/* Increased icon size */}
+                          <CardContent className="p-5 flex items-center gap-4">
+                            <div className="bg-gray-100 p-3 rounded-md">
+                              <FileText className="h-6 w-6 text-gray-500" />
                             </div>
                             <div className="overflow-hidden">
                               <h3 className="font-medium truncate">{file.name}</h3>
-                              <p className="text-xs text-gray-500 flex items-center mt-2"> {/* Increased margin */}
+                              <p className="text-xs text-gray-500 flex items-center mt-2">
                                 <Clock className="h-3 w-3 mr-1" /> Added recently
                               </p>
                             </div>
@@ -389,23 +391,23 @@ const StudyHelpPage: React.FC = () => {
                 )}
               </TabsContent>
               
-              {/* Practice Questions Tab - Apply similar spacing improvements */}
-              <TabsContent value="practice" className="mt-6"> {/* Added margin top */}
+              {/* Practice Questions Tab - Improved spacing and readability */}
+              <TabsContent value="practice" className="space-y-8">
                 {files.filter(file => file.status === 'processed').length > 0 ? (
-                  <div className="space-y-6">
-                    <h2 className="text-2xl font-serif font-bold mb-4">Practice Questions</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-8">
+                    <h2 className="text-2xl font-serif font-bold mb-6">Practice Questions</h2>
+                    <div className="grid grid-cols-1 gap-6">
                       {files.filter(file => file.status === 'processed').map(file => (
                         <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
-                          <CardHeader className="p-4 pb-2">
+                          <CardHeader className="p-5 pb-3">
                             <CardTitle className="text-lg font-medium truncate">{file.name}</CardTitle>
-                            <CardDescription className="text-xs flex items-center">
+                            <CardDescription className="text-xs flex items-center mt-1">
                               <GraduationCap className="h-3 w-3 mr-1 inline" /> 
                               {Math.floor(Math.random() * 15) + 5} questions available
                             </CardDescription>
                           </CardHeader>
-                          <CardContent className="p-4 pt-2">
-                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                          <CardContent className="p-5 pt-3">
+                            <p className="text-sm text-muted-foreground mb-4">
                               Practice questions cover key concepts from this material.
                             </p>
                             <Button variant="default" size="sm" className="w-full">
@@ -434,33 +436,35 @@ const StudyHelpPage: React.FC = () => {
                 )}
               </TabsContent>
               
-              {/* Reading Materials Tab - Apply similar spacing improvements */}
-              <TabsContent value="readings" className="mt-6"> {/* Added margin top */}
+              {/* Reading Materials Tab - Improved spacing and readability */}
+              <TabsContent value="readings" className="space-y-8">
                 {files.filter(file => file.status === 'processed').length > 0 ? (
-                  <div className="space-y-6">
-                    <h2 className="text-2xl font-serif font-bold mb-4">Recommended Reading Materials</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-8">
+                    <h2 className="text-2xl font-serif font-bold mb-6">Recommended Reading Materials</h2>
+                    <div className="grid grid-cols-1 gap-6">
                       {files.filter(file => file.status === 'processed').map(file => (
                         <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
-                          <CardHeader className="p-4 pb-2">
+                          <CardHeader className="p-5 pb-3">
                             <CardTitle className="text-lg font-medium truncate">{file.name}</CardTitle>
-                            <CardDescription className="text-xs flex items-center">
+                            <CardDescription className="text-xs flex items-center mt-1">
                               <BookOpen className="h-3 w-3 mr-1 inline" /> 
                               {Math.floor(Math.random() * 4) + 2} reading suggestions
                             </CardDescription>
                           </CardHeader>
-                          <CardContent className="p-4 pt-2">
-                            <ul className="text-sm text-muted-foreground space-y-1 mb-3">
+                          <CardContent className="p-5 pt-3">
+                            <ul className="text-sm text-muted-foreground space-y-2 mb-4">
                               {Array.from({ length: Math.floor(Math.random() * 3) + 2 }).map((_, idx) => (
-                                <li key={idx} className="truncate flex items-start">
-                                  <span className="text-primary mr-1 mt-0.5">•</span>
-                                  {[
-                                    "Introduction to the Core Concepts",
-                                    "Advanced Theory and Applications",
-                                    "Practical Implementation Guide",
-                                    "Historical Context and Development",
-                                    "Current Research and Trends"
-                                  ][idx % 5]} 
+                                <li key={idx} className="flex items-start">
+                                  <span className="text-primary mr-2 flex-shrink-0">•</span>
+                                  <span className="flex-1">
+                                    {[
+                                      "Introduction to the Core Concepts",
+                                      "Advanced Theory and Applications",
+                                      "Practical Implementation Guide",
+                                      "Historical Context and Development",
+                                      "Current Research and Trends"
+                                    ][idx % 5]}
+                                  </span>
                                 </li>
                               ))}
                             </ul>
@@ -490,12 +494,12 @@ const StudyHelpPage: React.FC = () => {
                 )}
               </TabsContent>
               
-              {/* AI Tutor Tab (Mobile Only) - Apply similar spacing improvements */}
-              <TabsContent value="ai-tutor" className="md:hidden mt-6"> {/* Added margin top */}
-                <Card className="overflow-visible"> {/* Added overflow-visible */}
-                  <CardHeader>
+              {/* AI Tutor Tab (Mobile Only) - Improved spacing */}
+              <TabsContent value="ai-tutor" className="md:hidden space-y-8">
+                <Card className="overflow-visible">
+                  <CardHeader className="pb-3">
                     <CardTitle className="text-xl">AI Tutor</CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-sm">
                       Ask questions and get help with your studies
                     </CardDescription>
                   </CardHeader>

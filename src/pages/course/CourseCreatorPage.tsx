@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -14,6 +13,7 @@ import { FileItem } from '@/components/FileItem';
 import { useToast } from "@/hooks/use-toast";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Switch } from "@/components/ui/switch";
+import { processMediaFile } from '@/utils/mediaUtils';
 import { 
   BookOpen, 
   Plus, 
@@ -94,7 +94,7 @@ const CourseCreatorPage: React.FC = () => {
   // Reference for the content textarea to handle media insertion
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
   
-  const handleCoverImageUpload = (files: File[]) => {
+  const handleCoverImageUpload = async (files: File[]) => {
     if (files.length > 0) {
       const file = files[0];
       setCoverImage(file);
@@ -108,77 +108,96 @@ const CourseCreatorPage: React.FC = () => {
     }
   };
   
-  // Handle media upload directly in content
-  const handleContentMediaUpload = (files: File[]) => {
+  // Handle media upload directly in content with compression
+  const handleContentMediaUpload = async (files: File[]) => {
     if (files.length > 0 && contentTextareaRef.current) {
       const file = files[0];
       const fileType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'document';
       
-      const mediaUrl = URL.createObjectURL(file);
-      const mediaId = Math.random().toString(36).substring(2, 9);
-      
-      // Insert media placeholder text at cursor position
-      const textarea = contentTextareaRef.current;
-      const cursorPosition = textarea.selectionStart;
-      
-      const mediaPlaceholder = fileType === 'image' 
-        ? `\n\n[Image: ${file.name}]\n\n` 
-        : fileType === 'video'
-          ? `\n\n[Video: ${file.name}]\n\n`
-          : `\n\n[Document: ${file.name}]\n\n`;
-          
-      const newContent = 
-        newLessonContent.substring(0, cursorPosition) + 
-        mediaPlaceholder +
-        newLessonContent.substring(cursorPosition);
-      
-      setNewLessonContent(newContent);
-      
-      // Add to lesson media
-      const newMedia = {
-        id: mediaId,
-        type: fileType as 'image' | 'video' | 'document',
-        url: mediaUrl,
-        name: file.name
-      };
-      
-      if (currentLessonId) {
-        // Update existing lesson
-        const updatedLessons = lessons.map(lesson => 
-          lesson.id === currentLessonId 
-            ? { ...lesson, media: [...lesson.media, newMedia] }
-            : lesson
-        );
-        setLessons(updatedLessons);
-      } else {
-        // For new lesson, just update the state
-        const lessonMedia = lessons.find(l => l.id === currentLessonId)?.media || [];
-        setLessons(prev => {
-          if (currentLessonId) {
-            return prev.map(lesson => 
-              lesson.id === currentLessonId 
-                ? { ...lesson, media: [...lessonMedia, newMedia] }
-                : lesson
-            );
+      try {
+        // Show loading toast
+        toast({
+          title: "Processing Media",
+          description: "Optimizing your media file for best performance...",
+        });
+        
+        // Process and optimize the media file
+        const { file: processedFile, dimensions, thumbnailUrl } = await processMediaFile(file);
+        
+        // Create object URL for the processed file
+        const mediaUrl = URL.createObjectURL(processedFile);
+        const mediaId = Math.random().toString(36).substring(2, 9);
+        
+        // Insert media placeholder text at cursor position
+        const textarea = contentTextareaRef.current;
+        const cursorPosition = textarea.selectionStart;
+        
+        const mediaPlaceholder = fileType === 'image' 
+          ? `\n\n[Image: ${file.name}]\n\n` 
+          : fileType === 'video'
+            ? `\n\n[Video: ${file.name}]\n\n`
+            : `\n\n[Document: ${file.name}]\n\n`;
+            
+        const newContent = 
+          newLessonContent.substring(0, cursorPosition) + 
+          mediaPlaceholder +
+          newLessonContent.substring(cursorPosition);
+        
+        setNewLessonContent(newContent);
+        
+        // Add to lesson media
+        const newMedia = {
+          id: mediaId,
+          type: fileType as 'image' | 'video' | 'document',
+          url: mediaUrl,
+          name: file.name
+        };
+        
+        if (currentLessonId) {
+          // Update existing lesson
+          const updatedLessons = lessons.map(lesson => 
+            lesson.id === currentLessonId 
+              ? { ...lesson, media: [...lesson.media, newMedia] }
+              : lesson
+          );
+          setLessons(updatedLessons);
+        } else {
+          // For new lesson, just update the state
+          const lessonMedia = lessons.find(l => l.id === currentLessonId)?.media || [];
+          setLessons(prev => {
+            if (currentLessonId) {
+              return prev.map(lesson => 
+                lesson.id === currentLessonId 
+                  ? { ...lesson, media: [...lessonMedia, newMedia] }
+                  : lesson
+              );
+            }
+            return prev;
+          });
+        }
+        
+        toast({
+          title: "Media Added",
+          description: `${fileType.charAt(0).toUpperCase() + fileType.slice(1)} has been optimized and inserted into your lesson content.`,
+        });
+        
+        // Set focus back to textarea after a short delay
+        setTimeout(() => {
+          if (contentTextareaRef.current) {
+            contentTextareaRef.current.focus();
+            // Position cursor after the inserted text
+            const newPosition = cursorPosition + mediaPlaceholder.length;
+            contentTextareaRef.current.setSelectionRange(newPosition, newPosition);
           }
-          return prev;
+        }, 100);
+      } catch (error) {
+        console.error("Error processing media:", error);
+        toast({
+          title: "Error Processing Media",
+          description: "There was a problem processing your file. Please try again.",
+          variant: "destructive"
         });
       }
-      
-      toast({
-        title: "Media Added",
-        description: `${fileType.charAt(0).toUpperCase() + fileType.slice(1)} has been inserted into your lesson content.`,
-      });
-      
-      // Set focus back to textarea after a short delay
-      setTimeout(() => {
-        if (contentTextareaRef.current) {
-          contentTextareaRef.current.focus();
-          // Position cursor after the inserted text
-          const newPosition = cursorPosition + mediaPlaceholder.length;
-          contentTextareaRef.current.setSelectionRange(newPosition, newPosition);
-        }
-      }, 100);
     }
   };
   
@@ -685,7 +704,7 @@ const CourseCreatorPage: React.FC = () => {
                                 'image/png': ['.png'],
                               }}
                               maxFiles={1}
-                              className="hidden"
+                              className="w-full"
                             >
                               <Button 
                                 type="button" 
@@ -705,7 +724,7 @@ const CourseCreatorPage: React.FC = () => {
                                 'video/mp4': ['.mp4'],
                               }}
                               maxFiles={1}
-                              className="hidden"
+                              className="w-full"
                             >
                               <Button 
                                 type="button" 
@@ -727,7 +746,7 @@ const CourseCreatorPage: React.FC = () => {
                                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
                               }}
                               maxFiles={1}
-                              className="hidden"
+                              className="w-full"
                             >
                               <Button 
                                 type="button" 
