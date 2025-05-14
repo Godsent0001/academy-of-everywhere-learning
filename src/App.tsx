@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,34 +36,47 @@ const ScrollToTop = () => {
   return null;
 };
 
-const App = () => (
-  <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/faculties" element={<FacultiesPage />} />
-          <Route path="/courses" element={<CoursesPage />} />
-          <Route path="/faculty/:slug" element={<FacultyDetailsPage />} />
-          <Route path="/department/:slug" element={<DepartmentPage />} />
-          <Route path="/course/:slug" element={<CoursePage />} />
-          <Route path="/lesson/:slug" element={<LessonPage />} />
-          <Route path="/exam/:slug" element={<ExamPage />} />
-          <Route path="/certificate/:slug" element={<CertificatePage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/signin" element={<SignInPage />} />
-          <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/student/help" element={<StudyHelpPage />} />
-          <Route path="/student/materials" element={<StudyHelpPage />} />
-          <Route path="/course-creator" element={<CourseCreatorPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </BrowserRouter>
-);
+// AppRoutes component to contain all routes
+const AppRoutes = () => {
+  return (
+    <>
+      <ScrollToTop />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/faculties" element={<FacultiesPage />} />
+        <Route path="/courses" element={<CoursesPage />} />
+        <Route path="/faculty/:slug" element={<FacultyDetailsPage />} />
+        <Route path="/department/:slug" element={<DepartmentPage />} />
+        <Route path="/course/:slug" element={<CoursePage />} />
+        <Route path="/lesson/:slug" element={<LessonPage />} />
+        <Route path="/exam/:slug" element={<ExamPage />} />
+        <Route path="/certificate/:slug" element={<CertificatePage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/signin" element={<SignInPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/student/help" element={<StudyHelpPage />} />
+        <Route path="/student/materials" element={<StudyHelpPage />} />
+        <Route path="/course-creator" element={<CourseCreatorPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <React.StrictMode>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <AppRoutes />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </BrowserRouter>
+    </React.StrictMode>
+  );
+};
 
 export default App;
