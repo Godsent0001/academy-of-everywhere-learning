@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { FileUploader } from '@/components/FileUploader';
 import { FileItem } from '@/components/FileItem';
 import { useToast } from "@/hooks/use-toast";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Switch } from "@/components/ui/switch";
 import { 
   BookOpen, 
   Plus, 
@@ -24,7 +25,10 @@ import {
   Image as ImageIcon, 
   FileVideo,
   PlusCircle,
-  BookText
+  Book,
+  Upload,
+  Check,
+  Award
 } from "lucide-react";
 
 type Lesson = {
@@ -59,7 +63,12 @@ const mockDepartments: Department[] = [
   { id: 'dept-3', name: 'Physics' },
   { id: 'dept-4', name: 'Biology' },
   { id: 'dept-5', name: 'Chemistry' },
-];
+  { id: 'dept-6', name: 'English' },
+  { id: 'dept-7', name: 'History' },
+  { id: 'dept-8', name: 'Art' },
+  { id: 'dept-9', name: 'Music' },
+  { id: 'dept-10', name: 'Economics' }
+].sort((a, b) => a.name.localeCompare(b.name)); // Sort departments alphabetically
 
 const CourseCreatorPage: React.FC = () => {
   const { toast } = useToast();
@@ -71,6 +80,8 @@ const CourseCreatorPage: React.FC = () => {
   const [coverImageUrl, setCoverImageUrl] = useState<string>('');
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [currentLessonId, setCurrentLessonId] = useState<string | null>(null);
+  const [finalExamEnabled, setFinalExamEnabled] = useState<boolean>(true);
+  const [passingPercentage, setPassingPercentage] = useState<number>(70);
   
   const [newLessonTitle, setNewLessonTitle] = useState<string>('');
   const [newLessonContent, setNewLessonContent] = useState<string>('');
@@ -78,12 +89,10 @@ const CourseCreatorPage: React.FC = () => {
   const [newQuestion, setNewQuestion] = useState<string>('');
   const [newOptions, setNewOptions] = useState<string[]>(['', '', '', '']);
   const [correctOption, setCorrectOption] = useState<number>(0);
-  const [lessonMedia, setLessonMedia] = useState<{
-    id: string;
-    type: 'image' | 'video' | 'document';
-    url: string;
-    name: string;
-  }[]>([]);
+  const [showingMediaTools, setShowingMediaTools] = useState<boolean>(false);
+  
+  // Reference for the content textarea to handle media insertion
+  const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
   
   const handleCoverImageUpload = (files: File[]) => {
     if (files.length > 0) {
@@ -99,31 +108,77 @@ const CourseCreatorPage: React.FC = () => {
     }
   };
   
-  const handleMediaUpload = (files: File[]) => {
-    if (files.length > 0) {
-      const newMedia = files.map(file => {
-        let type: 'image' | 'video' | 'document' = 'document';
-        
-        if (file.type.startsWith('image/')) {
-          type = 'image';
-        } else if (file.type.startsWith('video/')) {
-          type = 'video';
-        }
-        
-        return {
-          id: Math.random().toString(36).substring(2, 9),
-          type,
-          url: URL.createObjectURL(file),
-          name: file.name,
-        };
-      });
+  // Handle media upload directly in content
+  const handleContentMediaUpload = (files: File[]) => {
+    if (files.length > 0 && contentTextareaRef.current) {
+      const file = files[0];
+      const fileType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'document';
       
-      setLessonMedia([...lessonMedia, ...newMedia]);
+      const mediaUrl = URL.createObjectURL(file);
+      const mediaId = Math.random().toString(36).substring(2, 9);
+      
+      // Insert media placeholder text at cursor position
+      const textarea = contentTextareaRef.current;
+      const cursorPosition = textarea.selectionStart;
+      
+      const mediaPlaceholder = fileType === 'image' 
+        ? `\n\n[Image: ${file.name}]\n\n` 
+        : fileType === 'video'
+          ? `\n\n[Video: ${file.name}]\n\n`
+          : `\n\n[Document: ${file.name}]\n\n`;
+          
+      const newContent = 
+        newLessonContent.substring(0, cursorPosition) + 
+        mediaPlaceholder +
+        newLessonContent.substring(cursorPosition);
+      
+      setNewLessonContent(newContent);
+      
+      // Add to lesson media
+      const newMedia = {
+        id: mediaId,
+        type: fileType as 'image' | 'video' | 'document',
+        url: mediaUrl,
+        name: file.name
+      };
+      
+      if (currentLessonId) {
+        // Update existing lesson
+        const updatedLessons = lessons.map(lesson => 
+          lesson.id === currentLessonId 
+            ? { ...lesson, media: [...lesson.media, newMedia] }
+            : lesson
+        );
+        setLessons(updatedLessons);
+      } else {
+        // For new lesson, just update the state
+        const lessonMedia = lessons.find(l => l.id === currentLessonId)?.media || [];
+        setLessons(prev => {
+          if (currentLessonId) {
+            return prev.map(lesson => 
+              lesson.id === currentLessonId 
+                ? { ...lesson, media: [...lessonMedia, newMedia] }
+                : lesson
+            );
+          }
+          return prev;
+        });
+      }
       
       toast({
-        title: "Media Uploaded",
-        description: `${files.length} files have been uploaded to your lesson.`,
+        title: "Media Added",
+        description: `${fileType.charAt(0).toUpperCase() + fileType.slice(1)} has been inserted into your lesson content.`,
       });
+      
+      // Set focus back to textarea after a short delay
+      setTimeout(() => {
+        if (contentTextareaRef.current) {
+          contentTextareaRef.current.focus();
+          // Position cursor after the inserted text
+          const newPosition = cursorPosition + mediaPlaceholder.length;
+          contentTextareaRef.current.setSelectionRange(newPosition, newPosition);
+        }
+      }, 100);
     }
   };
   
@@ -142,7 +197,7 @@ const CourseCreatorPage: React.FC = () => {
       title: newLessonTitle,
       content: newLessonContent,
       order: lessons.length + 1,
-      media: [...lessonMedia],
+      media: [], // Media is now embedded directly in content
       quizQuestions: [...quizQuestions],
     };
     
@@ -152,7 +207,6 @@ const CourseCreatorPage: React.FC = () => {
     setNewLessonTitle('');
     setNewLessonContent('');
     setQuizQuestions([]);
-    setLessonMedia([]);
     
     toast({
       title: "Lesson Added",
@@ -168,7 +222,6 @@ const CourseCreatorPage: React.FC = () => {
     setNewLessonTitle(lesson.title);
     setNewLessonContent(lesson.content);
     setQuizQuestions(lesson.quizQuestions);
-    setLessonMedia(lesson.media);
     setActiveTab('add-lesson');
   };
   
@@ -181,7 +234,6 @@ const CourseCreatorPage: React.FC = () => {
             ...lesson,
             title: newLessonTitle,
             content: newLessonContent,
-            media: lessonMedia,
             quizQuestions: quizQuestions,
           }
         : lesson
@@ -194,7 +246,6 @@ const CourseCreatorPage: React.FC = () => {
     setNewLessonTitle('');
     setNewLessonContent('');
     setQuizQuestions([]);
-    setLessonMedia([]);
     
     toast({
       title: "Lesson Updated",
@@ -250,11 +301,6 @@ const CourseCreatorPage: React.FC = () => {
     setQuizQuestions(updatedQuestions);
   };
   
-  const handleDeleteMedia = (id: string) => {
-    const updatedMedia = lessonMedia.filter(media => media.id !== id);
-    setLessonMedia(updatedMedia);
-  };
-  
   const handleUpdateOption = (index: number, value: string) => {
     const updatedOptions = [...newOptions];
     updatedOptions[index] = value;
@@ -271,9 +317,25 @@ const CourseCreatorPage: React.FC = () => {
       return;
     }
     
+    // Check if there are enough quiz questions for a final exam
+    const totalQuizQuestions = lessons.reduce(
+      (total, lesson) => total + lesson.quizQuestions.length, 0
+    );
+    
+    if (finalExamEnabled && totalQuizQuestions < 5) {
+      toast({
+        title: "Not Enough Quiz Questions",
+        description: "You need at least 5 quiz questions across all lessons to enable the final exam.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     toast({
       title: "Course Saved",
-      description: "Your course has been saved successfully and is pending review.",
+      description: `Your course has been saved successfully with ${
+        finalExamEnabled ? `a final exam requiring ${passingPercentage}% to pass` : "no final exam"
+      }.`,
     });
     
     // In a real app, would submit to backend here
@@ -282,17 +344,18 @@ const CourseCreatorPage: React.FC = () => {
       description: courseDescription,
       departmentId: selectedDepartment,
       coverImage,
-      lessons
+      lessons,
+      finalExam: {
+        enabled: finalExamEnabled,
+        passingPercentage
+      }
     });
   };
   
-  const renderMediaIcon = (type: 'image' | 'video' | 'document'): LucideIcon => {
-    switch (type) {
-      case 'image': return ImageIcon;
-      case 'video': return FileVideo;
-      default: return FileText;
-    }
-  };
+  // Calculate total number of quiz questions across all lessons
+  const totalQuizQuestions = lessons.reduce(
+    (total, lesson) => total + lesson.quizQuestions.length, 0
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -339,7 +402,7 @@ const CourseCreatorPage: React.FC = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="Select department" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-[300px]">
                         {mockDepartments.map((dept) => (
                           <SelectItem key={dept.id} value={dept.id}>
                             {dept.name}
@@ -405,6 +468,45 @@ const CourseCreatorPage: React.FC = () => {
                     )}
                   </div>
                   
+                  {/* Final Exam Settings */}
+                  <div className="pt-4 border-t">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-base font-medium">Final Exam</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Enable automatic final exam from all quiz questions
+                        </p>
+                      </div>
+                      <Switch
+                        checked={finalExamEnabled}
+                        onCheckedChange={setFinalExamEnabled}
+                      />
+                    </div>
+                    
+                    {finalExamEnabled && (
+                      <div className="mt-4 space-y-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="passingPercentage">Passing percentage</Label>
+                          <div className="flex items-center">
+                            <Input
+                              id="passingPercentage"
+                              type="number"
+                              min={50}
+                              max={100}
+                              value={passingPercentage}
+                              onChange={(e) => setPassingPercentage(parseInt(e.target.value) || 70)}
+                              className="w-24"
+                            />
+                            <span className="ml-2">%</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Students must score at least this percentage to earn a certificate
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
                   <Button 
                     onClick={() => setActiveTab('lessons')}
                     disabled={!courseTitle || !courseDescription || !selectedDepartment}
@@ -436,8 +538,7 @@ const CourseCreatorPage: React.FC = () => {
                               Lesson {index + 1}: {lesson.title}
                             </CardTitle>
                             <CardDescription>
-                              {lesson.quizQuestions.length} quiz questions | 
-                              {lesson.media.length} media resources
+                              {lesson.quizQuestions.length} quiz questions
                             </CardDescription>
                           </div>
                           <div className="flex gap-2">
@@ -460,7 +561,7 @@ const CourseCreatorPage: React.FC = () => {
                       </CardHeader>
                       <CardContent className="pb-4">
                         <p className="text-sm text-muted-foreground line-clamp-2">
-                          {lesson.content}
+                          {lesson.content.replace(/\[Image:.*?\]|\[Video:.*?\]|\[Document:.*?\]/g, '[Media]')}
                         </p>
                       </CardContent>
                     </Card>
@@ -484,10 +585,48 @@ const CourseCreatorPage: React.FC = () => {
               )}
               
               {lessons.length > 0 && (
-                <div className="flex justify-end mt-4">
-                  <Button onClick={handleSaveCourse}>
-                    <Save className="h-4 w-4 mr-2" /> Save Course
-                  </Button>
+                <div className="space-y-4">
+                  {/* Final Exam Section */}
+                  <Card className={`border ${finalExamEnabled ? 'border-primary' : 'border-muted'}`}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Award className="h-5 w-5 mr-2 text-primary" />
+                        Final Exam
+                      </CardTitle>
+                      <CardDescription>
+                        {finalExamEnabled 
+                          ? `Students must achieve ${passingPercentage}% to earn a certificate` 
+                          : "Final exam is disabled for this course"}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {finalExamEnabled ? (
+                        <div>
+                          <p className="text-sm mb-4">
+                            The final exam will include questions from all lessons (
+                            <span className="font-medium">{totalQuizQuestions} questions total</span>
+                            ).
+                          </p>
+                          {totalQuizQuestions < 5 && (
+                            <p className="text-sm text-destructive">
+                              You need at least 5 quiz questions across all lessons for a final exam.
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm">
+                          Enable the final exam option in Course Details to automatically generate
+                          a final exam from all quiz questions.
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                  
+                  <div className="flex justify-end mt-4">
+                    <Button onClick={handleSaveCourse}>
+                      <Save className="h-4 w-4 mr-2" /> Save Course
+                    </Button>
+                  </div>
                 </div>
               )}
             </TabsContent>
@@ -516,60 +655,97 @@ const CourseCreatorPage: React.FC = () => {
                   
                   <div className="space-y-2">
                     <Label htmlFor="lessonContent">Lesson Content</Label>
-                    <Textarea
-                      id="lessonContent"
-                      value={newLessonContent}
-                      onChange={(e) => setNewLessonContent(e.target.value)}
-                      placeholder="Write your lesson content here..."
-                      className="min-h-[200px]"
-                    />
-                  </div>
-                  
-                  {/* Lesson Media Section */}
-                  <div className="space-y-4">
-                    <h3 className="font-medium text-lg">Lesson Media</h3>
-                    
-                    <FileUploader
-                      onFilesSelected={handleMediaUpload}
-                      maxSize={52428800} // 50MB
-                      accept={{
-                        'image/jpeg': ['.jpg', '.jpeg'],
-                        'image/png': ['.png'],
-                        'video/mp4': ['.mp4'],
-                        'application/pdf': ['.pdf'],
-                        'application/msword': ['.doc'],
-                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-                      }}
-                    />
-                    
-                    {lessonMedia.length > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                        {lessonMedia.map((media) => {
-                          const MediaIcon = renderMediaIcon(media.type);
-                          
-                          return (
-                            <Card key={media.id} className="flex items-center p-3">
-                              <div className="bg-muted rounded p-2 mr-3">
-                                <MediaIcon className="h-6 w-6" />
-                              </div>
-                              <div className="flex-grow">
-                                <p className="font-medium truncate">{media.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {media.type.charAt(0).toUpperCase() + media.type.slice(1)}
-                                </p>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteMedia(media.id)}
+                    <div className="relative">
+                      <Textarea
+                        id="lessonContent"
+                        ref={contentTextareaRef}
+                        value={newLessonContent}
+                        onChange={(e) => setNewLessonContent(e.target.value)}
+                        placeholder="Write your lesson content here..."
+                        className="min-h-[200px] pr-12" // Make room for the media toolbar button
+                      />
+                      <div className="absolute right-2 top-2 flex flex-col space-y-2">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setShowingMediaTools(!showingMediaTools)}
+                          className="h-8 w-8 rounded-full"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                        
+                        {showingMediaTools && (
+                          <div className="absolute right-full mr-2 top-0 bg-white shadow-lg rounded-md p-2 flex flex-col space-y-2 border">
+                            <FileUploader
+                              onFilesSelected={handleContentMediaUpload}
+                              maxSize={52428800} // 50MB
+                              accept={{
+                                'image/jpeg': ['.jpg', '.jpeg'],
+                                'image/png': ['.png'],
+                              }}
+                              maxFiles={1}
+                              className="hidden"
+                            >
+                              <Button 
+                                type="button" 
+                                size="sm" 
+                                variant="outline"
+                                className="flex items-center w-full"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <ImageIcon className="h-4 w-4 mr-2" />
+                                Add Image
                               </Button>
-                            </Card>
-                          );
-                        })}
+                            </FileUploader>
+                            
+                            <FileUploader
+                              onFilesSelected={handleContentMediaUpload}
+                              maxSize={104857600} // 100MB
+                              accept={{
+                                'video/mp4': ['.mp4'],
+                              }}
+                              maxFiles={1}
+                              className="hidden"
+                            >
+                              <Button 
+                                type="button" 
+                                size="sm" 
+                                variant="outline"
+                                className="flex items-center w-full"
+                              >
+                                <FileVideo className="h-4 w-4 mr-2" />
+                                Add Video
+                              </Button>
+                            </FileUploader>
+                            
+                            <FileUploader
+                              onFilesSelected={handleContentMediaUpload}
+                              maxSize={52428800} // 50MB
+                              accept={{
+                                'application/pdf': ['.pdf'],
+                                'application/msword': ['.doc'],
+                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+                              }}
+                              maxFiles={1}
+                              className="hidden"
+                            >
+                              <Button 
+                                type="button" 
+                                size="sm" 
+                                variant="outline"
+                                className="flex items-center w-full"
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Add Document
+                              </Button>
+                            </FileUploader>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Use the + button to add images, videos, or documents directly into your content
+                    </p>
                   </div>
                   
                   {/* Quiz Questions Section */}
@@ -665,7 +841,7 @@ const CourseCreatorPage: React.FC = () => {
                         setNewLessonTitle('');
                         setNewLessonContent('');
                         setQuizQuestions([]);
-                        setLessonMedia([]);
+                        setShowingMediaTools(false);
                       }}
                     >
                       Cancel
@@ -730,13 +906,32 @@ const CourseCreatorPage: React.FC = () => {
                                   <div>
                                     <h4 className="font-medium">{lesson.title}</h4>
                                     <p className="text-xs text-muted-foreground">
-                                      {lesson.media.length} resources • {lesson.quizQuestions.length} quiz questions
+                                      {lesson.quizQuestions.length} quiz questions
                                     </p>
                                   </div>
                                 </div>
                               </CardContent>
                             </Card>
                           ))}
+                          
+                          {/* Final Exam Preview */}
+                          {finalExamEnabled && totalQuizQuestions >= 5 && (
+                            <Card className="border-primary">
+                              <CardContent className="p-4">
+                                <div className="flex items-center">
+                                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground mr-3">
+                                    <Award className="h-4 w-4" />
+                                  </div>
+                                  <div>
+                                    <h4 className="font-medium">Final Exam</h4>
+                                    <p className="text-xs text-muted-foreground">
+                                      {totalQuizQuestions} questions • {passingPercentage}% to pass
+                                    </p>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
                         </div>
                       ) : (
                         <div className="text-center p-6 border rounded-md mt-6">
@@ -746,7 +941,7 @@ const CourseCreatorPage: React.FC = () => {
                     </div>
                   ) : (
                     <div className="text-center p-10">
-                      <BookText className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                      <Book className="mx-auto h-12 w-12 text-gray-300 mb-4" />
                       <h3 className="text-xl font-medium mb-2">Complete Course Details First</h3>
                       <p className="text-muted-foreground mb-4">
                         Add your course details and lessons to see a preview

@@ -7,7 +7,7 @@ const StudentHelpPage: React.FC = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    navigate('/student/help');
+    navigate('/student/study-help');
   }, [navigate]);
   
   return null;

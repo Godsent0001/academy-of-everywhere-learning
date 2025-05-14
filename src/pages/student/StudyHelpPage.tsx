@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -241,267 +240,271 @@ const StudyHelpPage: React.FC = () => {
         </div>
         
         <div className="container mx-auto px-4 py-6 md:py-8">
+          {/* Fixed spacing issues in mobile tabs */}
           <Tabs defaultValue="upload" className="w-full">
-            <TabsList className="mb-6 w-full grid grid-cols-2 md:flex md:flex-wrap md:justify-center gap-2">
-              <TabsTrigger value="upload" className="flex-grow-0 h-auto py-2">
-                <Upload className="h-4 w-4 mr-2" />
+            <TabsList className="mb-6 w-full grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap md:justify-center gap-2">
+              <TabsTrigger value="upload" className="flex-grow-0 h-auto py-2 px-4 w-full sm:w-auto">
+                <Upload className="h-5 w-5 mr-2" /> {/* Increased icon size */}
                 <span className="whitespace-normal">Upload Materials</span>
               </TabsTrigger>
-              <TabsTrigger value="summaries" className="flex-grow-0 h-auto py-2">
-                <FileText className="h-4 w-4 mr-2" />
+              <TabsTrigger value="summaries" className="flex-grow-0 h-auto py-2 px-4 w-full sm:w-auto">
+                <FileText className="h-5 w-5 mr-2" /> {/* Increased icon size */}
                 <span className="whitespace-normal">Study Notes</span>
               </TabsTrigger>
-              <TabsTrigger value="practice" className="flex-grow-0 h-auto py-2">
-                <FileText className="h-4 w-4 mr-2" />
+              <TabsTrigger value="practice" className="flex-grow-0 h-auto py-2 px-4 w-full sm:w-auto">
+                <FileText className="h-5 w-5 mr-2" /> {/* Increased icon size */}
                 <span className="whitespace-normal">Practice Questions</span>
               </TabsTrigger>
-              <TabsTrigger value="readings" className="flex-grow-0 h-auto py-2">
-                <BookOpen className="h-4 w-4 mr-2" />
+              <TabsTrigger value="readings" className="flex-grow-0 h-auto py-2 px-4 w-full sm:w-auto">
+                <BookOpen className="h-5 w-5 mr-2" /> {/* Increased icon size */}
                 <span className="whitespace-normal">Reading Materials</span>
               </TabsTrigger>
-              <TabsTrigger value="ai-tutor" className="md:hidden flex-grow-0 h-auto py-2">
-                <Sparkles className="h-4 w-4 mr-2" />
+              <TabsTrigger value="ai-tutor" className="md:hidden flex-grow-0 h-auto py-2 px-4 w-full sm:w-auto">
+                <Sparkles className="h-5 w-5 mr-2" /> {/* Increased icon size */}
                 <span className="whitespace-normal">AI Tutor</span>
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="upload" className="space-y-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xl">Upload Study Materials</CardTitle>
-                  <CardDescription>
-                    Upload textbooks, notes, slides or any study materials for AI analysis
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FileUploader 
-                    onFilesSelected={handleFileUpload}
-                    maxSize={10485760} // 10 MB
-                    accept={{
-                      'application/pdf': ['.pdf'],
-                      'application/msword': ['.doc'],
-                      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-                      'application/vnd.ms-powerpoint': ['.ppt'],
-                      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
-                      'text/plain': ['.txt'],
-                      'image/jpeg': ['.jpg', '.jpeg'],
-                      'image/png': ['.png'],
-                    }}
-                  />
-                </CardContent>
-              </Card>
-              
-              {files.length > 0 && (
-                <Card>
+            {/* Increased spacing between tab content */}
+            <div className="mt-6">
+              <TabsContent value="upload" className="space-y-8"> {/* Increased space-y */}
+                <Card className="overflow-visible">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xl">Uploaded Materials</CardTitle>
+                    <CardTitle className="text-xl">Upload Study Materials</CardTitle>
                     <CardDescription>
-                      Your files will be automatically analyzed upon upload
+                      Upload textbooks, notes, slides or any study materials for AI analysis
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {files.map(file => (
-                        <FileItem 
-                          key={file.id} 
-                          file={file}
-                          onDelete={() => handleDeleteFile(file.id)} 
-                        />
+                  <CardContent className="pt-4"> {/* Added padding top for spacing */}
+                    <FileUploader 
+                      onFilesSelected={handleFileUpload}
+                      maxSize={10485760} // 10 MB
+                      accept={{
+                        'application/pdf': ['.pdf'],
+                        'application/msword': ['.doc'],
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+                        'application/vnd.ms-powerpoint': ['.ppt'],
+                        'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+                        'text/plain': ['.txt'],
+                        'image/jpeg': ['.jpg', '.jpeg'],
+                        'image/png': ['.png'],
+                      }}
+                    />
+                  </CardContent>
+                </Card>
+                
+                {files.length > 0 && (
+                  <Card className="overflow-visible mt-8"> {/* Added margin top */}
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-xl">Uploaded Materials</CardTitle>
+                      <CardDescription>
+                        Your files will be automatically analyzed upon upload
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-4"> {/* Added padding top */}
+                      <div className="space-y-4"> {/* Increased spacing */}
+                        {files.map(file => (
+                          <FileItem 
+                            key={file.id} 
+                            file={file}
+                            onDelete={() => handleDeleteFile(file.id)} 
+                          />
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+              
+              {/* Study Notes Tab */}
+              <TabsContent value="summaries" className="mt-6"> {/* Added margin top */}
+                {files.filter(file => file.status === 'processed').length > 0 ? (
+                  <div className="space-y-8"> {/* Increased spacing */}
+                    <h2 className="text-2xl font-serif font-bold mb-6">Study Notes</h2> {/* Increased margin bottom */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> {/* Increased gap */}
+                      {files.filter(file => file.status === 'processed').map(file => (
+                        <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
+                          <CardHeader className="p-5 pb-3"> {/* Increased padding */}
+                            <CardTitle className="text-lg font-medium truncate">{file.name}</CardTitle>
+                            <CardDescription className="text-xs flex items-center">
+                              <Clock className="h-3 w-3 mr-1 inline" /> 
+                              Processed {new Date(file.uploadDate).toLocaleDateString()}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="p-5 pt-3"> {/* Increased padding */}
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-4"> {/* Increased margin */}
+                              {file.type.includes('image') ? (
+                                <>The AI has analyzed this image and identified key concepts related to 
+                                the subject matter.</>
+                              ) : (
+                                <>The AI has analyzed this document and created a summary 
+                                highlighting the key concepts.</>
+                              )}
+                            </p>
+                            <Button variant="default" size="sm" className="w-full">
+                              View Summary
+                            </Button>
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-            
-            {/* Study Notes Tab */}
-            <TabsContent value="summaries">
-              {files.filter(file => file.status === 'processed').length > 0 ? (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-serif font-bold mb-4">Study Notes</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {files.filter(file => file.status === 'processed').map(file => (
-                      <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
-                        <CardHeader className="p-4 pb-2">
-                          <CardTitle className="text-lg font-medium truncate">{file.name}</CardTitle>
-                          <CardDescription className="text-xs flex items-center">
-                            <Clock className="h-3 w-3 mr-1 inline" /> 
-                            Processed {new Date(file.uploadDate).toLocaleDateString()}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-2">
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                            {file.type.includes('image') ? (
-                              <>The AI has analyzed this image and identified key concepts related to 
-                              the subject matter.</>
-                            ) : (
-                              <>The AI has analyzed this document and created a summary 
-                              highlighting the key concepts.</>
-                            )}
-                          </p>
-                          <Button variant="default" size="sm" className="w-full">
-                            View Summary
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
+                    
+                    <h2 className="text-2xl font-serif font-bold mt-10 mb-6">Recently Added</h2> {/* Increased margin */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"> {/* Increased gap */}
+                      {files.filter(file => file.status === 'processed')
+                        .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime())
+                        .slice(0, 3)
+                        .map(file => (
+                        <Card key={file.id} className="hover:bg-gray-50 transition-colors">
+                          <CardContent className="p-5 flex items-center gap-4"> {/* Increased padding and gap */}
+                            <div className="bg-gray-100 p-3 rounded-md"> {/* Increased padding and added rounded-md */}
+                              <FileText className="h-6 w-6 text-gray-500" /> {/* Increased icon size */}
+                            </div>
+                            <div className="overflow-hidden">
+                              <h3 className="font-medium truncate">{file.name}</h3>
+                              <p className="text-xs text-gray-500 flex items-center mt-2"> {/* Increased margin */}
+                                <Clock className="h-3 w-3 mr-1" /> Added recently
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
                   </div>
-                  
-                  <h2 className="text-2xl font-serif font-bold mt-8 mb-4">Recently Added</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {files.filter(file => file.status === 'processed')
-                      .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime())
-                      .slice(0, 3)
-                      .map(file => (
-                      <Card key={file.id} className="hover:bg-gray-50 transition-colors">
-                        <CardContent className="p-4 flex items-center gap-3">
-                          <div className="bg-gray-100 p-2 rounded">
-                            <FileText className="h-5 w-5 text-gray-500" />
-                          </div>
-                          <div className="overflow-hidden">
-                            <h3 className="font-medium truncate">{file.name}</h3>
-                            <p className="text-xs text-gray-500 flex items-center mt-1">
-                              <Clock className="h-3 w-3 mr-1" /> Added recently
+                ) : (
+                  <Card className="p-8 text-center">
+                    <CardContent>
+                      <div className="flex flex-col items-center">
+                        <FileText className="h-16 w-16 text-gray-300 mb-4" />
+                        <h3 className="text-xl font-medium mb-2">No Study Notes Available</h3>
+                        <p className="text-muted-foreground mb-6">
+                          Upload some study materials first, and we'll generate summaries for you
+                        </p>
+                        <Button variant="outline" onClick={() => document.querySelector('[data-value="upload"]')?.dispatchEvent(new Event('click'))}>
+                          Upload Materials
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+              
+              {/* Practice Questions Tab - Apply similar spacing improvements */}
+              <TabsContent value="practice" className="mt-6"> {/* Added margin top */}
+                {files.filter(file => file.status === 'processed').length > 0 ? (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-serif font-bold mb-4">Practice Questions</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {files.filter(file => file.status === 'processed').map(file => (
+                        <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
+                          <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-lg font-medium truncate">{file.name}</CardTitle>
+                            <CardDescription className="text-xs flex items-center">
+                              <GraduationCap className="h-3 w-3 mr-1 inline" /> 
+                              {Math.floor(Math.random() * 15) + 5} questions available
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-2">
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                              Practice questions cover key concepts from this material.
                             </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <Card className="p-8 text-center">
-                  <CardContent>
-                    <div className="flex flex-col items-center">
-                      <FileText className="h-16 w-16 text-gray-300 mb-4" />
-                      <h3 className="text-xl font-medium mb-2">No Study Notes Available</h3>
-                      <p className="text-muted-foreground mb-6">
-                        Upload some study materials first, and we'll generate summaries for you
-                      </p>
-                      <Button variant="outline" onClick={() => document.querySelector('[data-value="upload"]')?.dispatchEvent(new Event('click'))}>
-                        Upload Materials
-                      </Button>
+                            <Button variant="default" size="sm" className="w-full">
+                              Start Practice Quiz
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
+                  </div>
+                ) : (
+                  <Card className="p-8 text-center">
+                    <CardContent>
+                      <div className="flex flex-col items-center">
+                        <FileText className="h-16 w-16 text-gray-300 mb-4" />
+                        <h3 className="text-xl font-medium mb-2">No Practice Questions Available</h3>
+                        <p className="text-muted-foreground mb-6">
+                          Upload some study materials first, and we'll generate practice questions for you
+                        </p>
+                        <Button variant="outline" onClick={() => document.querySelector('[data-value="upload"]')?.dispatchEvent(new Event('click'))}>
+                          Upload Materials
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+              
+              {/* Reading Materials Tab - Apply similar spacing improvements */}
+              <TabsContent value="readings" className="mt-6"> {/* Added margin top */}
+                {files.filter(file => file.status === 'processed').length > 0 ? (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-serif font-bold mb-4">Recommended Reading Materials</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {files.filter(file => file.status === 'processed').map(file => (
+                        <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
+                          <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-lg font-medium truncate">{file.name}</CardTitle>
+                            <CardDescription className="text-xs flex items-center">
+                              <BookOpen className="h-3 w-3 mr-1 inline" /> 
+                              {Math.floor(Math.random() * 4) + 2} reading suggestions
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-2">
+                            <ul className="text-sm text-muted-foreground space-y-1 mb-3">
+                              {Array.from({ length: Math.floor(Math.random() * 3) + 2 }).map((_, idx) => (
+                                <li key={idx} className="truncate flex items-start">
+                                  <span className="text-primary mr-1 mt-0.5">•</span>
+                                  {[
+                                    "Introduction to the Core Concepts",
+                                    "Advanced Theory and Applications",
+                                    "Practical Implementation Guide",
+                                    "Historical Context and Development",
+                                    "Current Research and Trends"
+                                  ][idx % 5]} 
+                                </li>
+                              ))}
+                            </ul>
+                            <Button variant="default" size="sm" className="w-full">
+                              View All Resources
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <Card className="p-8 text-center">
+                    <CardContent>
+                      <div className="flex flex-col items-center">
+                        <BookOpen className="h-16 w-16 text-gray-300 mb-4" />
+                        <h3 className="text-xl font-medium mb-2">No Reading Recommendations Available</h3>
+                        <p className="text-muted-foreground mb-6">
+                          Upload some study materials first, and we'll suggest additional reading materials
+                        </p>
+                        <Button variant="outline" onClick={() => document.querySelector('[data-value="upload"]')?.dispatchEvent(new Event('click'))}>
+                          Upload Materials
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+              
+              {/* AI Tutor Tab (Mobile Only) - Apply similar spacing improvements */}
+              <TabsContent value="ai-tutor" className="md:hidden mt-6"> {/* Added margin top */}
+                <Card className="overflow-visible"> {/* Added overflow-visible */}
+                  <CardHeader>
+                    <CardTitle className="text-xl">AI Tutor</CardTitle>
+                    <CardDescription>
+                      Ask questions and get help with your studies
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {renderChatUI()}
                   </CardContent>
                 </Card>
-              )}
-            </TabsContent>
-            
-            {/* Practice Questions Tab */}
-            <TabsContent value="practice">
-              {files.filter(file => file.status === 'processed').length > 0 ? (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-serif font-bold mb-4">Practice Questions</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {files.filter(file => file.status === 'processed').map(file => (
-                      <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
-                        <CardHeader className="p-4 pb-2">
-                          <CardTitle className="text-lg font-medium truncate">{file.name}</CardTitle>
-                          <CardDescription className="text-xs flex items-center">
-                            <GraduationCap className="h-3 w-3 mr-1 inline" /> 
-                            {Math.floor(Math.random() * 15) + 5} questions available
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-2">
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                            Practice questions cover key concepts from this material.
-                          </p>
-                          <Button variant="default" size="sm" className="w-full">
-                            Start Practice Quiz
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <Card className="p-8 text-center">
-                  <CardContent>
-                    <div className="flex flex-col items-center">
-                      <FileText className="h-16 w-16 text-gray-300 mb-4" />
-                      <h3 className="text-xl font-medium mb-2">No Practice Questions Available</h3>
-                      <p className="text-muted-foreground mb-6">
-                        Upload some study materials first, and we'll generate practice questions for you
-                      </p>
-                      <Button variant="outline" onClick={() => document.querySelector('[data-value="upload"]')?.dispatchEvent(new Event('click'))}>
-                        Upload Materials
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-            
-            {/* Reading Materials Tab */}
-            <TabsContent value="readings">
-              {files.filter(file => file.status === 'processed').length > 0 ? (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-serif font-bold mb-4">Recommended Reading Materials</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {files.filter(file => file.status === 'processed').map(file => (
-                      <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
-                        <CardHeader className="p-4 pb-2">
-                          <CardTitle className="text-lg font-medium truncate">{file.name}</CardTitle>
-                          <CardDescription className="text-xs flex items-center">
-                            <BookOpen className="h-3 w-3 mr-1 inline" /> 
-                            {Math.floor(Math.random() * 4) + 2} reading suggestions
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-2">
-                          <ul className="text-sm text-muted-foreground space-y-1 mb-3">
-                            {Array.from({ length: Math.floor(Math.random() * 3) + 2 }).map((_, idx) => (
-                              <li key={idx} className="truncate flex items-start">
-                                <span className="text-primary mr-1 mt-0.5">•</span>
-                                {[
-                                  "Introduction to the Core Concepts",
-                                  "Advanced Theory and Applications",
-                                  "Practical Implementation Guide",
-                                  "Historical Context and Development",
-                                  "Current Research and Trends"
-                                ][idx % 5]} 
-                              </li>
-                            ))}
-                          </ul>
-                          <Button variant="default" size="sm" className="w-full">
-                            View All Resources
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <Card className="p-8 text-center">
-                  <CardContent>
-                    <div className="flex flex-col items-center">
-                      <BookOpen className="h-16 w-16 text-gray-300 mb-4" />
-                      <h3 className="text-xl font-medium mb-2">No Reading Recommendations Available</h3>
-                      <p className="text-muted-foreground mb-6">
-                        Upload some study materials first, and we'll suggest additional reading materials
-                      </p>
-                      <Button variant="outline" onClick={() => document.querySelector('[data-value="upload"]')?.dispatchEvent(new Event('click'))}>
-                        Upload Materials
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-            
-            {/* AI Tutor Tab (Mobile Only) */}
-            <TabsContent value="ai-tutor" className="md:hidden">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">AI Tutor</CardTitle>
-                  <CardDescription>
-                    Ask questions and get help with your studies
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {renderChatUI()}
-                </CardContent>
-              </Card>
-            </TabsContent>
+              </TabsContent>
+            </div>
           </Tabs>
         </div>
       </main>
