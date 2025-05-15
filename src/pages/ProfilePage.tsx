@@ -69,6 +69,18 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleCheckout = (price: string) => {
+    // In a real application, this would redirect to a payment gateway
+    toast({
+      title: "Redirecting to payment",
+      description: `Processing payment for $${price}`,
+    });
+    // Simulating payment gateway redirect
+    setTimeout(() => {
+      window.open("/payment", "_blank");
+    }, 1000);
+  };
+
   const PricingCard: React.FC<PricingCardProps> = ({ title, originalPrice, price, discount, features, isPrimary }) => (
     <Card className={`border overflow-hidden ${isPrimary ? 'shadow-lg border-primary' : 'shadow'}`}>
       <CardHeader className={`pb-3 ${isPrimary ? 'bg-primary text-primary-foreground' : ''}`}>
@@ -110,8 +122,11 @@ const ProfilePage: React.FC = () => {
         </ul>
       </CardContent>
       <CardFooter>
-        <Button className={`w-full ${isPrimary ? '' : 'variant-outline'}`}>
-          Choose Plan
+        <Button 
+          className={`w-full ${isPrimary ? '' : 'variant-outline'}`}
+          onClick={() => handleCheckout(price)}
+        >
+          Buy Plan
         </Button>
       </CardFooter>
     </Card>

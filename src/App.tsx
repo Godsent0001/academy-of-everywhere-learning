@@ -25,6 +25,7 @@ import CourseCreatorPage from "./pages/course/CourseCreatorPage";
 import ProfilePage from "./pages/ProfilePage";
 import HelpPage from "./pages/HelpPage";
 import ContactPage from "./pages/ContactPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 
 // Create the query client
 const queryClient = new QueryClient();
@@ -54,6 +55,8 @@ const AppRoutes = () => {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/help" element={<HelpPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/payment" element={<PaymentSuccessPage />} />
+        <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

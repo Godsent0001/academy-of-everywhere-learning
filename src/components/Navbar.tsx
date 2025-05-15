@@ -37,7 +37,21 @@ export const Navbar: React.FC = () => {
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+    if (!isMenuOpen) {
+      // When opening the menu, prevent body scrolling
+      document.body.style.overflow = 'hidden';
+    } else {
+      // When closing, allow scrolling again
+      document.body.style.overflow = 'auto';
+    }
   };
+
+  // Clean up the body style when component unmounts
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
 
   // Mock login/logout functions
   const toggleLogin = () => {
@@ -103,10 +117,10 @@ export const Navbar: React.FC = () => {
                 </Link>
               ) : (
                 <>
-                  <Link to="/signin">
+                  <Link to="/profile">
                     <Button variant="ghost" size="sm" className="flex items-center">
                       <User className="h-4 w-4 mr-2" />
-                      Sign In
+                      Profile
                     </Button>
                   </Link>
                   <Link to="/signup">
@@ -125,48 +139,39 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile menu */}
         {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 animate-fade-in">
-            <form onSubmit={handleSearch} className="mb-4 relative">
-              <Input
-                type="text"
-                placeholder="Search courses..."
-                className="w-full pl-8 h-12 text-base"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
-              <Button 
-                type="submit" 
-                size="sm" 
-                className="absolute right-1 top-1 h-10"
-              >
-                Search
-              </Button>
-            </form>
-            <div className="flex flex-col space-y-4">
-              <Link to="/" className="text-gray-700 hover:text-primary py-3 text-lg border-b border-gray-100 font-medium transition-colors" onClick={toggleMenu}>Home</Link>
-              <Link to="/faculties" className="text-gray-700 hover:text-primary py-3 text-lg border-b border-gray-100 font-medium transition-colors" onClick={toggleMenu}>Faculties</Link>
-              <Link to="/courses" className="text-gray-700 hover:text-primary py-3 text-lg border-b border-gray-100 font-medium transition-colors" onClick={toggleMenu}>All Courses</Link>
-              <Link to="/student/help" className="text-gray-700 hover:text-primary py-3 text-lg border-b border-gray-100 font-medium transition-colors flex items-center justify-between" onClick={toggleMenu}>
-                <span>Study Help</span>
-                <span className="bg-primary/10 text-primary py-1 px-3 rounded-full text-sm">New!</span>
-              </Link>
-              <Link to="/about" className="text-gray-700 hover:text-primary py-3 text-lg font-medium transition-colors" onClick={toggleMenu}>About</Link>
-              <div className="pt-4 flex space-x-3">
-                {isLoggedIn ? (
+          <div className="md:hidden fixed inset-0 top-[73px] z-40 bg-white overflow-y-auto">
+            <div className="p-4 mt-0 pb-4 animate-fade-in">
+              <form onSubmit={handleSearch} className="mb-4 relative">
+                <Input
+                  type="text"
+                  placeholder="Search courses..."
+                  className="w-full pl-8 h-12 text-base"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
+                <Button 
+                  type="submit" 
+                  size="sm" 
+                  className="absolute right-1 top-1 h-10"
+                >
+                  Search
+                </Button>
+              </form>
+              <div className="flex flex-col space-y-4">
+                <Link to="/" className="text-gray-700 hover:text-primary py-3 text-lg border-b border-gray-100 font-medium transition-colors" onClick={toggleMenu}>Home</Link>
+                <Link to="/faculties" className="text-gray-700 hover:text-primary py-3 text-lg border-b border-gray-100 font-medium transition-colors" onClick={toggleMenu}>Faculties</Link>
+                <Link to="/courses" className="text-gray-700 hover:text-primary py-3 text-lg border-b border-gray-100 font-medium transition-colors" onClick={toggleMenu}>All Courses</Link>
+                <Link to="/student/help" className="text-gray-700 hover:text-primary py-3 text-lg border-b border-gray-100 font-medium transition-colors flex items-center justify-between" onClick={toggleMenu}>
+                  <span>Study Help</span>
+                  <span className="bg-primary/10 text-primary py-1 px-3 rounded-full text-sm">New!</span>
+                </Link>
+                <Link to="/about" className="text-gray-700 hover:text-primary py-3 text-lg font-medium transition-colors" onClick={toggleMenu}>About</Link>
+                <div className="pt-4 flex space-x-3">
                   <Link to="/profile" className="w-full">
                     <Button className="w-full h-12 text-base" onClick={toggleMenu}>My Profile</Button>
                   </Link>
-                ) : (
-                  <>
-                    <Link to="/signin" className="w-1/2">
-                      <Button variant="outline" className="w-full h-12 text-base" onClick={toggleMenu}>Sign In</Button>
-                    </Link>
-                    <Link to="/signup" className="w-1/2">
-                      <Button className="w-full h-12 text-base" onClick={toggleMenu}>Sign Up</Button>
-                    </Link>
-                  </>
-                )}
+                </div>
               </div>
             </div>
           </div>
