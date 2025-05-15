@@ -1,5 +1,4 @@
 
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -23,6 +22,9 @@ import SignUpPage from "./pages/auth/SignUpPage";
 import StudyHelpPage from "./pages/student/StudyHelpPage";
 import StudentHelpPage from "./pages/student/StudentHelpPage";
 import CourseCreatorPage from "./pages/course/CourseCreatorPage";
+import ProfilePage from "./pages/ProfilePage";
+import HelpPage from "./pages/HelpPage";
+import ContactPage from "./pages/ContactPage";
 
 // Create the query client
 const queryClient = new QueryClient();
@@ -60,6 +62,9 @@ const AppRoutes = () => {
         <Route path="/student/study-help" element={<StudyHelpPage />} />
         <Route path="/student/materials" element={<StudyHelpPage />} />
         <Route path="/course-creator" element={<CourseCreatorPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/help" element={<HelpPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

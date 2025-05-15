@@ -11,6 +11,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 
 export const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -18,6 +23,8 @@ export const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  // Mock logged-in state - in a real app, this would come from authentication context
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +37,11 @@ export const Navbar: React.FC = () => {
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  // Mock login/logout functions
+  const toggleLogin = () => {
+    setIsLoggedIn(!isLoggedIn);
   };
 
   // Scroll to top on route change
@@ -82,15 +94,26 @@ export const Navbar: React.FC = () => {
             </form>
             
             <div className="hidden sm:flex space-x-2">
-              <Link to="/signin">
-                <Button variant="ghost" size="sm" className="flex items-center">
-                  <User className="h-4 w-4 mr-2" />
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/signup">
-                <Button size="sm">Sign Up</Button>
-              </Link>
+              {isLoggedIn ? (
+                <Link to="/profile">
+                  <Avatar className="h-8 w-8 cursor-pointer">
+                    <AvatarImage src="/placeholder.svg" />
+                    <AvatarFallback>JD</AvatarFallback>
+                  </Avatar>
+                </Link>
+              ) : (
+                <>
+                  <Link to="/signin">
+                    <Button variant="ghost" size="sm" className="flex items-center">
+                      <User className="h-4 w-4 mr-2" />
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/signup">
+                    <Button size="sm">Sign Up</Button>
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Mobile menu button - INCREASED SIZE */}
@@ -130,12 +153,20 @@ export const Navbar: React.FC = () => {
               </Link>
               <Link to="/about" className="text-gray-700 hover:text-primary py-3 text-lg font-medium transition-colors" onClick={toggleMenu}>About</Link>
               <div className="pt-4 flex space-x-3">
-                <Link to="/signin" className="w-1/2">
-                  <Button variant="outline" className="w-full h-12 text-base" onClick={toggleMenu}>Sign In</Button>
-                </Link>
-                <Link to="/signup" className="w-1/2">
-                  <Button className="w-full h-12 text-base" onClick={toggleMenu}>Sign Up</Button>
-                </Link>
+                {isLoggedIn ? (
+                  <Link to="/profile" className="w-full">
+                    <Button className="w-full h-12 text-base" onClick={toggleMenu}>My Profile</Button>
+                  </Link>
+                ) : (
+                  <>
+                    <Link to="/signin" className="w-1/2">
+                      <Button variant="outline" className="w-full h-12 text-base" onClick={toggleMenu}>Sign In</Button>
+                    </Link>
+                    <Link to="/signup" className="w-1/2">
+                      <Button className="w-full h-12 text-base" onClick={toggleMenu}>Sign Up</Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
