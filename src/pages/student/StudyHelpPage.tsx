@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -241,35 +240,33 @@ const StudyHelpPage: React.FC = () => {
         </div>
         
         <div className="container mx-auto px-4 py-6 md:py-8">
-          {/* Improved mobile tabs with better spacing and layout */}
+          {/* Improved horizontal tabs layout for all screen sizes */}
           <Tabs defaultValue="upload" className="w-full">
-            <TabsList className="mb-6 w-full grid grid-cols-1 gap-3">
-              {/* Using full-width buttons in a vertical stack on small screens */}
-              <TabsTrigger value="upload" className="flex items-center justify-center py-3">
-                <Upload className="h-5 w-5 mr-2" />
-                <span className="text-base">Upload Materials</span>
-              </TabsTrigger>
-              <TabsTrigger value="summaries" className="flex items-center justify-center py-3">
-                <FileText className="h-5 w-5 mr-2" />
-                <span className="text-base">Study Notes</span>
-              </TabsTrigger>
-              <TabsTrigger value="practice" className="flex items-center justify-center py-3">
-                <GraduationCap className="h-5 w-5 mr-2" />
-                <span className="text-base">Practice Questions</span>
-              </TabsTrigger>
-              <TabsTrigger value="readings" className="flex items-center justify-center py-3">
-                <BookOpen className="h-5 w-5 mr-2" />
-                <span className="text-base">Reading Materials</span>
-              </TabsTrigger>
-              <TabsTrigger value="ai-tutor" className="md:hidden flex items-center justify-center py-3">
-                <Sparkles className="h-5 w-5 mr-2" />
-                <span className="text-base">AI Tutor</span>
-              </TabsTrigger>
-            </TabsList>
+            {/* Horizontal tablist with scroll for mobile */}
+            <div className="relative mb-6 overflow-x-auto pb-2">
+              <TabsList className="inline-flex w-auto min-w-full h-auto p-1 whitespace-nowrap">
+                <TabsTrigger value="upload" className="flex-shrink-0 h-12 px-4 flex items-center justify-center">
+                  <Upload className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Upload Materials</span>
+                </TabsTrigger>
+                <TabsTrigger value="summaries" className="flex-shrink-0 h-12 px-4 flex items-center justify-center">
+                  <FileText className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Study Notes</span>
+                </TabsTrigger>
+                <TabsTrigger value="practice" className="flex-shrink-0 h-12 px-4 flex items-center justify-center">
+                  <GraduationCap className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Practice Questions</span>
+                </TabsTrigger>
+                <TabsTrigger value="readings" className="flex-shrink-0 h-12 px-4 flex items-center justify-center">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Reading Materials</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
             
-            {/* Increased spacing between tab content */}
-            <div className="mt-8">
-              <TabsContent value="upload" className="space-y-8">
+            {/* Tab content with improved spacing */}
+            <div className="mt-4">
+              <TabsContent value="upload" className="space-y-6">
                 <Card className="overflow-visible">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-xl">Upload Study Materials</CardTitle>
@@ -296,7 +293,7 @@ const StudyHelpPage: React.FC = () => {
                 </Card>
                 
                 {files.length > 0 && (
-                  <Card className="overflow-visible mt-8">
+                  <Card className="overflow-visible mt-6">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-xl">Uploaded Materials</CardTitle>
                       <CardDescription className="text-sm">
@@ -304,7 +301,7 @@ const StudyHelpPage: React.FC = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-4">
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {files.map(file => (
                           <FileItem 
                             key={file.id} 
@@ -319,22 +316,22 @@ const StudyHelpPage: React.FC = () => {
               </TabsContent>
               
               {/* Study Notes Tab - Improved spacing and readability */}
-              <TabsContent value="summaries" className="space-y-8">
+              <TabsContent value="summaries" className="space-y-6">
                 {files.filter(file => file.status === 'processed').length > 0 ? (
-                  <div className="space-y-8">
-                    <h2 className="text-2xl font-serif font-bold mb-6">Study Notes</h2>
-                    <div className="grid grid-cols-1 gap-6">
+                  <div className="space-y-6">
+                    <h2 className="text-xl md:text-2xl font-serif font-bold mb-4">Study Notes</h2>
+                    <div className="grid grid-cols-1 gap-4">
                       {files.filter(file => file.status === 'processed').map(file => (
                         <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
-                          <CardHeader className="p-5 pb-3">
-                            <CardTitle className="text-lg font-medium truncate">{file.name}</CardTitle>
+                          <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-base md:text-lg font-medium truncate">{file.name}</CardTitle>
                             <CardDescription className="text-xs flex items-center mt-1">
                               <Clock className="h-3 w-3 mr-1 inline" /> 
                               Processed {new Date(file.uploadDate).toLocaleDateString()}
                             </CardDescription>
                           </CardHeader>
-                          <CardContent className="p-5 pt-3">
-                            <p className="text-sm text-muted-foreground mb-4">
+                          <CardContent className="p-4 pt-2">
+                            <p className="text-sm text-muted-foreground mb-3">
                               {file.type.includes('image') ? (
                                 <>The AI has analyzed this image and identified key concepts related to 
                                 the subject matter.</>
@@ -351,8 +348,9 @@ const StudyHelpPage: React.FC = () => {
                       ))}
                     </div>
                     
-                    <h2 className="text-2xl font-serif font-bold mt-10 mb-6">Recently Added</h2>
-                    <div className="grid grid-cols-1 gap-6">
+                    {/* Recently Added section */}
+                    <h2 className="text-xl md:text-2xl font-serif font-bold mt-8 mb-4">Recently Added</h2>
+                    <div className="grid grid-cols-1 gap-4">
                       {files.filter(file => file.status === 'processed')
                         .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime())
                         .slice(0, 3)
@@ -374,12 +372,12 @@ const StudyHelpPage: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <Card className="p-8 text-center">
+                  <Card className="p-6 text-center">
                     <CardContent>
                       <div className="flex flex-col items-center">
-                        <FileText className="h-16 w-16 text-gray-300 mb-4" />
-                        <h3 className="text-xl font-medium mb-2">No Study Notes Available</h3>
-                        <p className="text-muted-foreground mb-6">
+                        <FileText className="h-12 w-12 text-gray-300 mb-4" />
+                        <h3 className="text-lg md:text-xl font-medium mb-2">No Study Notes Available</h3>
+                        <p className="text-muted-foreground text-sm mb-5">
                           Upload some study materials first, and we'll generate summaries for you
                         </p>
                         <Button variant="outline" onClick={() => document.querySelector('[data-value="upload"]')?.dispatchEvent(new Event('click'))}>
@@ -392,22 +390,22 @@ const StudyHelpPage: React.FC = () => {
               </TabsContent>
               
               {/* Practice Questions Tab - Improved spacing and readability */}
-              <TabsContent value="practice" className="space-y-8">
+              <TabsContent value="practice" className="space-y-6">
                 {files.filter(file => file.status === 'processed').length > 0 ? (
-                  <div className="space-y-8">
-                    <h2 className="text-2xl font-serif font-bold mb-6">Practice Questions</h2>
-                    <div className="grid grid-cols-1 gap-6">
+                  <div className="space-y-6">
+                    <h2 className="text-xl md:text-2xl font-serif font-bold mb-4">Practice Questions</h2>
+                    <div className="grid grid-cols-1 gap-4">
                       {files.filter(file => file.status === 'processed').map(file => (
                         <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
-                          <CardHeader className="p-5 pb-3">
-                            <CardTitle className="text-lg font-medium truncate">{file.name}</CardTitle>
+                          <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-base md:text-lg font-medium truncate">{file.name}</CardTitle>
                             <CardDescription className="text-xs flex items-center mt-1">
                               <GraduationCap className="h-3 w-3 mr-1 inline" /> 
                               {Math.floor(Math.random() * 15) + 5} questions available
                             </CardDescription>
                           </CardHeader>
-                          <CardContent className="p-5 pt-3">
-                            <p className="text-sm text-muted-foreground mb-4">
+                          <CardContent className="p-4 pt-2">
+                            <p className="text-sm text-muted-foreground mb-3">
                               Practice questions cover key concepts from this material.
                             </p>
                             <Button variant="default" size="sm" className="w-full">
@@ -419,12 +417,12 @@ const StudyHelpPage: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <Card className="p-8 text-center">
+                  <Card className="p-6 text-center">
                     <CardContent>
                       <div className="flex flex-col items-center">
-                        <FileText className="h-16 w-16 text-gray-300 mb-4" />
-                        <h3 className="text-xl font-medium mb-2">No Practice Questions Available</h3>
-                        <p className="text-muted-foreground mb-6">
+                        <FileText className="h-12 w-12 text-gray-300 mb-4" />
+                        <h3 className="text-lg md:text-xl font-medium mb-2">No Practice Questions Available</h3>
+                        <p className="text-muted-foreground text-sm mb-5">
                           Upload some study materials first, and we'll generate practice questions for you
                         </p>
                         <Button variant="outline" onClick={() => document.querySelector('[data-value="upload"]')?.dispatchEvent(new Event('click'))}>
@@ -437,22 +435,22 @@ const StudyHelpPage: React.FC = () => {
               </TabsContent>
               
               {/* Reading Materials Tab - Improved spacing and readability */}
-              <TabsContent value="readings" className="space-y-8">
+              <TabsContent value="readings" className="space-y-6">
                 {files.filter(file => file.status === 'processed').length > 0 ? (
-                  <div className="space-y-8">
-                    <h2 className="text-2xl font-serif font-bold mb-6">Recommended Reading Materials</h2>
-                    <div className="grid grid-cols-1 gap-6">
+                  <div className="space-y-6">
+                    <h2 className="text-xl md:text-2xl font-serif font-bold mb-4">Recommended Reading Materials</h2>
+                    <div className="grid grid-cols-1 gap-4">
                       {files.filter(file => file.status === 'processed').map(file => (
                         <Card key={file.id} className="hover:bg-gray-50 transition-colors overflow-hidden">
-                          <CardHeader className="p-5 pb-3">
-                            <CardTitle className="text-lg font-medium truncate">{file.name}</CardTitle>
+                          <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-base md:text-lg font-medium truncate">{file.name}</CardTitle>
                             <CardDescription className="text-xs flex items-center mt-1">
                               <BookOpen className="h-3 w-3 mr-1 inline" /> 
                               {Math.floor(Math.random() * 4) + 2} reading suggestions
                             </CardDescription>
                           </CardHeader>
-                          <CardContent className="p-5 pt-3">
-                            <ul className="text-sm text-muted-foreground space-y-2 mb-4">
+                          <CardContent className="p-4 pt-2">
+                            <ul className="text-sm text-muted-foreground space-y-1.5 mb-3">
                               {Array.from({ length: Math.floor(Math.random() * 3) + 2 }).map((_, idx) => (
                                 <li key={idx} className="flex items-start">
                                   <span className="text-primary mr-2 flex-shrink-0">•</span>
@@ -477,12 +475,12 @@ const StudyHelpPage: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <Card className="p-8 text-center">
+                  <Card className="p-6 text-center">
                     <CardContent>
                       <div className="flex flex-col items-center">
-                        <BookOpen className="h-16 w-16 text-gray-300 mb-4" />
-                        <h3 className="text-xl font-medium mb-2">No Reading Recommendations Available</h3>
-                        <p className="text-muted-foreground mb-6">
+                        <BookOpen className="h-12 w-12 text-gray-300 mb-4" />
+                        <h3 className="text-lg md:text-xl font-medium mb-2">No Reading Recommendations Available</h3>
+                        <p className="text-muted-foreground text-sm mb-5">
                           Upload some study materials first, and we'll suggest additional reading materials
                         </p>
                         <Button variant="outline" onClick={() => document.querySelector('[data-value="upload"]')?.dispatchEvent(new Event('click'))}>
@@ -492,21 +490,6 @@ const StudyHelpPage: React.FC = () => {
                     </CardContent>
                   </Card>
                 )}
-              </TabsContent>
-              
-              {/* AI Tutor Tab (Mobile Only) - Improved spacing */}
-              <TabsContent value="ai-tutor" className="md:hidden space-y-8">
-                <Card className="overflow-visible">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-xl">AI Tutor</CardTitle>
-                    <CardDescription className="text-sm">
-                      Ask questions and get help with your studies
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    {renderChatUI()}
-                  </CardContent>
-                </Card>
               </TabsContent>
             </div>
           </Tabs>
