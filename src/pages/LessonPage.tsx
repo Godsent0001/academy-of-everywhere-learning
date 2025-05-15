@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -60,6 +59,22 @@ const LessonPage: React.FC = () => {
       </div>
     );
   }
+  
+  // Handle lesson content to properly display formatted content
+  const renderLessonContent = (content: string) => {
+    // Simple Markdown-like rendering
+    let formattedContent = content
+      // Replace bold text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      // Replace italic text
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      // Replace lists
+      .replace(/- (.*?)(?:\n|$)/g, '<li>$1</li>')
+      // Wrap lists in ul tags
+      .replace(/(<li>.*?<\/li>)+/g, '<ul>$&</ul>');
+    
+    return formattedContent;
+  };
 
   const handleAnswerChange = (questionId: string, value: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -91,7 +106,7 @@ const LessonPage: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-grow">
+      <main className="flex-grow w-full px-0 mx-0">
         <div className="bg-primary text-white py-8">
           <div className="container mx-auto px-4">
             <div className="mb-2">
@@ -105,7 +120,7 @@ const LessonPage: React.FC = () => {
           </div>
         </div>
         
-        <div className="page-container">
+        <div className="container mx-auto px-4 py-6">
           <div className="mb-6 flex justify-between">
             {prevLesson ? (
               <Link to={`/lesson/${prevLesson.slug}`}>
@@ -152,7 +167,12 @@ const LessonPage: React.FC = () => {
                       <p className="text-gray-700">{lesson.description}</p>
                     </div>
                     <Separator className="my-6" />
-                    <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
+                    <div 
+                      className="lesson-content"
+                      dangerouslySetInnerHTML={{ 
+                        __html: renderLessonContent(lesson.content) 
+                      }} 
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -252,6 +272,40 @@ const LessonPage: React.FC = () => {
         </div>
       </main>
       <Footer />
+      
+      <style jsx>{`
+        .lesson-content img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 0.375rem;
+          margin: 1rem 0;
+        }
+        
+        .lesson-content video {
+          max-width: 100%;
+          max-height: 400px;
+          border-radius: 0.375rem;
+          margin: 1rem 0;
+        }
+        
+        .lesson-content ul {
+          list-style-type: disc;
+          padding-left: 1.5rem;
+          margin: 1rem 0;
+        }
+        
+        .lesson-content li {
+          margin-bottom: 0.5rem;
+        }
+        
+        .lesson-content strong {
+          font-weight: bold;
+        }
+        
+        .lesson-content em {
+          font-style: italic;
+        }
+      `}</style>
     </div>
   );
 };
