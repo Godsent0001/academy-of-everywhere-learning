@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -13,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Switch } from "@/components/ui/switch";
 import { TextEditor } from '@/components/TextEditor';
+import { Textarea } from "@/components/ui/textarea";
 import { 
   BookOpen, 
   Plus, 

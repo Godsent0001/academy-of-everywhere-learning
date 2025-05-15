@@ -273,7 +273,8 @@ const LessonPage: React.FC = () => {
       </main>
       <Footer />
       
-      <style jsx>{`
+      <style>
+        {`
         .lesson-content img {
           max-width: 100%;
           height: auto;
@@ -305,7 +306,8 @@ const LessonPage: React.FC = () => {
         .lesson-content em {
           font-style: italic;
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };

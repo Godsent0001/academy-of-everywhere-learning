@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -261,7 +260,8 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         className={`min-h-[200px] ${className}`}
       />
       
-      <style jsx>{`
+      <style>
+        {`
         .content-image, .content-video {
           max-width: 100%;
           border-radius: 0.375rem;
@@ -281,7 +281,10 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           color: #1e293b;
           text-decoration: none;
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
+
+export { TextEditor };
