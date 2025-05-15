@@ -88,6 +88,28 @@ const LessonPage: React.FC = () => {
     }
   };
 
+  // Add CSS to handle embedded media properly
+  const contentStyle = `
+    .lesson-content img {
+      max-width: 100%;
+      height: auto;
+      margin: 1rem 0;
+      border-radius: 0.375rem;
+    }
+    .lesson-content video {
+      max-width: 100%;
+      height: auto;
+      margin: 1rem 0;
+      border-radius: 0.375rem;
+    }
+    .lesson-content iframe {
+      max-width: 100%;
+      height: 400px;
+      margin: 1rem 0;
+      border-radius: 0.375rem;
+    }
+  `;
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -152,7 +174,8 @@ const LessonPage: React.FC = () => {
                       <p className="text-gray-700">{lesson.description}</p>
                     </div>
                     <Separator className="my-6" />
-                    <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
+                    <style>{contentStyle}</style>
+                    <div className="lesson-content" dangerouslySetInnerHTML={{ __html: lesson.content }} />
                   </div>
                 </CardContent>
               </Card>
