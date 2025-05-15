@@ -14,7 +14,7 @@ interface TextEditorProps {
   id?: string;
 }
 
-export const TextEditor: React.FC<TextEditorProps> = ({ 
+const TextEditor: React.FC<TextEditorProps> = ({ 
   value, 
   onChange, 
   placeholder = "Write your content here...", 
