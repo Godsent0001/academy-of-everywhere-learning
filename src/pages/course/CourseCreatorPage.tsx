@@ -1,10 +1,10 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,8 +13,7 @@ import { FileItem } from '@/components/FileItem';
 import { useToast } from "@/hooks/use-toast";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Switch } from "@/components/ui/switch";
-import { TextEditor } from '@/components/TextEditor';
-import { Textarea } from "@/components/ui/textarea";
+import { processMediaFile } from '@/utils/mediaUtils';
 import { 
   BookOpen, 
   Plus, 
@@ -22,6 +21,7 @@ import {
   Trash2, 
   Save, 
   FileText, 
+  LucideIcon, 
   Image as ImageIcon, 
   FileVideo,
   PlusCircle,
@@ -89,6 +89,10 @@ const CourseCreatorPage: React.FC = () => {
   const [newQuestion, setNewQuestion] = useState<string>('');
   const [newOptions, setNewOptions] = useState<string[]>(['', '', '', '']);
   const [correctOption, setCorrectOption] = useState<number>(0);
+  const [showingMediaTools, setShowingMediaTools] = useState<boolean>(false);
+  
+  // Reference for the content textarea to handle media insertion
+  const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
   
   const handleCoverImageUpload = async (files: File[]) => {
     if (files.length > 0) {
@@ -101,6 +105,99 @@ const CourseCreatorPage: React.FC = () => {
         title: "Cover Image Uploaded",
         description: "Your course cover image has been uploaded successfully.",
       });
+    }
+  };
+  
+  // Handle media upload directly in content with compression
+  const handleContentMediaUpload = async (files: File[]) => {
+    if (files.length > 0 && contentTextareaRef.current) {
+      const file = files[0];
+      const fileType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'document';
+      
+      try {
+        // Show loading toast
+        toast({
+          title: "Processing Media",
+          description: "Optimizing your media file for best performance...",
+        });
+        
+        // Process and optimize the media file
+        const { file: processedFile, dimensions, thumbnailUrl } = await processMediaFile(file);
+        
+        // Create object URL for the processed file
+        const mediaUrl = URL.createObjectURL(processedFile);
+        const mediaId = Math.random().toString(36).substring(2, 9);
+        
+        // Insert media placeholder text at cursor position
+        const textarea = contentTextareaRef.current;
+        const cursorPosition = textarea.selectionStart;
+        
+        const mediaPlaceholder = fileType === 'image' 
+          ? `\n\n[Image: ${file.name}]\n\n` 
+          : fileType === 'video'
+            ? `\n\n[Video: ${file.name}]\n\n`
+            : `\n\n[Document: ${file.name}]\n\n`;
+            
+        const newContent = 
+          newLessonContent.substring(0, cursorPosition) + 
+          mediaPlaceholder +
+          newLessonContent.substring(cursorPosition);
+        
+        setNewLessonContent(newContent);
+        
+        // Add to lesson media
+        const newMedia = {
+          id: mediaId,
+          type: fileType as 'image' | 'video' | 'document',
+          url: mediaUrl,
+          name: file.name
+        };
+        
+        if (currentLessonId) {
+          // Update existing lesson
+          const updatedLessons = lessons.map(lesson => 
+            lesson.id === currentLessonId 
+              ? { ...lesson, media: [...lesson.media, newMedia] }
+              : lesson
+          );
+          setLessons(updatedLessons);
+        } else {
+          // For new lesson, just update the state
+          const lessonMedia = lessons.find(l => l.id === currentLessonId)?.media || [];
+          setLessons(prev => {
+            if (currentLessonId) {
+              return prev.map(lesson => 
+                lesson.id === currentLessonId 
+                  ? { ...lesson, media: [...lessonMedia, newMedia] }
+                  : lesson
+              );
+            }
+            return prev;
+          });
+        }
+        
+        toast({
+          title: "Media Added",
+          description: `${fileType.charAt(0).toUpperCase() + fileType.slice(1)} has been optimized and inserted into your lesson content.`,
+        });
+        
+        // Set focus back to textarea after a short delay
+        setTimeout(() => {
+          if (contentTextareaRef.current) {
+            contentTextareaRef.current.focus();
+            // Position cursor after the inserted text
+            const newPosition = cursorPosition + mediaPlaceholder.length;
+            contentTextareaRef.current.setSelectionRange(newPosition, newPosition);
+          }
+        }, 100);
+      } catch (error) {
+        console.error("Error processing media:", error);
+        toast({
+          title: "Error Processing Media",
+          description: "There was a problem processing your file. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
   
@@ -577,12 +674,97 @@ const CourseCreatorPage: React.FC = () => {
                   
                   <div className="space-y-2">
                     <Label htmlFor="lessonContent">Lesson Content</Label>
-                    <TextEditor
-                      id="lessonContent"
-                      value={newLessonContent}
-                      onChange={setNewLessonContent}
-                      placeholder="Write your lesson content here..."
-                    />
+                    <div className="relative">
+                      <Textarea
+                        id="lessonContent"
+                        ref={contentTextareaRef}
+                        value={newLessonContent}
+                        onChange={(e) => setNewLessonContent(e.target.value)}
+                        placeholder="Write your lesson content here..."
+                        className="min-h-[200px] pr-12" // Make room for the media toolbar button
+                      />
+                      <div className="absolute right-2 top-2 flex flex-col space-y-2">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setShowingMediaTools(!showingMediaTools)}
+                          className="h-8 w-8 rounded-full"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                        
+                        {showingMediaTools && (
+                          <div className="absolute right-full mr-2 top-0 bg-white shadow-lg rounded-md p-2 flex flex-col space-y-2 border">
+                            <FileUploader
+                              onFilesSelected={handleContentMediaUpload}
+                              maxSize={52428800} // 50MB
+                              accept={{
+                                'image/jpeg': ['.jpg', '.jpeg'],
+                                'image/png': ['.png'],
+                              }}
+                              maxFiles={1}
+                              className="w-full"
+                            >
+                              <Button 
+                                type="button" 
+                                size="sm" 
+                                variant="outline"
+                                className="flex items-center w-full"
+                              >
+                                <ImageIcon className="h-4 w-4 mr-2" />
+                                Add Image
+                              </Button>
+                            </FileUploader>
+                            
+                            <FileUploader
+                              onFilesSelected={handleContentMediaUpload}
+                              maxSize={104857600} // 100MB
+                              accept={{
+                                'video/mp4': ['.mp4'],
+                              }}
+                              maxFiles={1}
+                              className="w-full"
+                            >
+                              <Button 
+                                type="button" 
+                                size="sm" 
+                                variant="outline"
+                                className="flex items-center w-full"
+                              >
+                                <FileVideo className="h-4 w-4 mr-2" />
+                                Add Video
+                              </Button>
+                            </FileUploader>
+                            
+                            <FileUploader
+                              onFilesSelected={handleContentMediaUpload}
+                              maxSize={52428800} // 50MB
+                              accept={{
+                                'application/pdf': ['.pdf'],
+                                'application/msword': ['.doc'],
+                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+                              }}
+                              maxFiles={1}
+                              className="w-full"
+                            >
+                              <Button 
+                                type="button" 
+                                size="sm" 
+                                variant="outline"
+                                className="flex items-center w-full"
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Add Document
+                              </Button>
+                            </FileUploader>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Use the + button to add images, videos, or documents directly into your content
+                    </p>
                   </div>
                   
                   {/* Quiz Questions Section */}
@@ -678,6 +860,7 @@ const CourseCreatorPage: React.FC = () => {
                         setNewLessonTitle('');
                         setNewLessonContent('');
                         setQuizQuestions([]);
+                        setShowingMediaTools(false);
                       }}
                     >
                       Cancel
