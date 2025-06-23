@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Moon, Sun, CreditCard, LogOut, HelpCircle, Phone, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
+import { useTheme } from "@/components/theme-provider";
 
 interface PricingCardProps {
   title: string;
@@ -20,7 +20,7 @@ interface PricingCardProps {
 }
 
 const ProfilePage: React.FC = () => {
-  const [darkMode, setDarkMode] = useState(false);
+  const { theme, setTheme } = useTheme();
   const [user, setUser] = useState({ name: "John Doe", email: "john.doe@example.com" });
   const [avatarUrl, setAvatarUrl] = useState("/placeholder.svg");
   const [openEditProfile, setOpenEditProfile] = useState(false);
@@ -28,15 +28,6 @@ const ProfilePage: React.FC = () => {
   const [tempAvatarUrl, setTempAvatarUrl] = useState(avatarUrl);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Mock theme toggle functionality
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
 
   const handleLogout = () => {
     toast({
@@ -79,6 +70,10 @@ const ProfilePage: React.FC = () => {
     setTimeout(() => {
       window.open("/payment", "_blank");
     }, 1000);
+  };
+
+  const toggleDarkMode = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
   };
 
   const PricingCard: React.FC<PricingCardProps> = ({ title, originalPrice, price, discount, features, isPrimary }) => (
@@ -174,8 +169,8 @@ const ProfilePage: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <Sun className="h-4 w-4" />
                     <Switch
-                      checked={darkMode}
-                      onCheckedChange={setDarkMode}
+                      checked={theme === "dark"}
+                      onCheckedChange={toggleDarkMode}
                     />
                     <Moon className="h-4 w-4" />
                   </div>
@@ -227,7 +222,7 @@ const ProfilePage: React.FC = () => {
 
         {/* Pricing section */}
         <h2 className="text-2xl font-serif font-bold mb-4">Upgrade Your Plan</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <PricingCard
             title="Free Plan"
             originalPrice="0"
@@ -236,6 +231,18 @@ const ProfilePage: React.FC = () => {
               "10,000 tokens per day",
               "100,000 tokens per month",
               "Free access to courses",
+            ]}
+          />
+          <PricingCard
+            title="Basic Plan"
+            originalPrice="2.99"
+            price="0.99"
+            discount="67%"
+            features={[
+              "50,000 tokens per day",
+              "500,000 tokens per month",
+              "Chat with AI tutor",
+              "Access to all courses",
             ]}
           />
           <PricingCard
@@ -249,6 +256,7 @@ const ProfilePage: React.FC = () => {
               "1,000,000 tokens per month",
               "Chat with AI tutor",
               "Access to all courses",
+              "Priority support",
             ]}
           />
           <PricingCard
@@ -262,6 +270,7 @@ const ProfilePage: React.FC = () => {
               "Chat with AI tutor",
               "Access to all courses",
               "Priority support",
+              "Advanced analytics",
             ]}
           />
         </div>
